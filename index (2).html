@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Para ti, con cariño</title>
+<meta name="description" content="Una página hecha con mucho cariño, nieve y pizza.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Gochi+Hand&display=swap" rel="stylesheet">
+<!-- Confeti (si no carga por falta de internet, la página usa una lluvia de emojis de respaldo) -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+
+<style>
+/* =========================================================
+   1. VARIABLES Y BASE
+   ========================================================= */
+:root{
+  --nieve-1:#E0F2FE;
+  --nieve-2:#BAE6FD;
+  --nieve-3:#7DD3FC;
+  --rojo:#E63946;
+  --rojo-osc:#B91C2C;
+  --amarillo:#FDE047;
+  --amarillo-2:#FACC15;
+  --madera:#854D0E;
+  --madera-osc:#78350F;
+  --madera-muy-osc:#4A2307;
+  --crema:#FFFDF7;
+  --blanco:#FFFFFF;
+  --tinta:#1E3A5F;
+  --tinta-suave:#475569;
+  --rosa:#F9A8D4;
+  --radio:18px;
+  --sombra-papel:0 2px 0 rgba(30,58,95,.08), 0 10px 24px -8px rgba(30,58,95,.25);
+  --fuente-ui:"Fredoka", "Trebuchet MS", system-ui, sans-serif;
+  --fuente-mano:"Gochi Hand", "Comic Sans MS", cursive;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{
+  margin:0;
+  font-family:var(--fuente-ui);
+  color:var(--tinta);
+  background:linear-gradient(180deg,var(--nieve-1) 0%,var(--nieve-2) 55%,var(--nieve-1) 100%);
+  background-attachment:fixed;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font-family:inherit;cursor:pointer}
+img,svg{max-width:100%}
+.visualmente-oculto{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Lienzo de nieve detrás de todo */
+#nieve{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+main,header,footer{position:relative;z-index:1}
+
+/* Tablón de madera estilo cabaña (reutilizable) */
+.madera{
+  background:
+    repeating-linear-gradient(180deg,#92400E 0 20px,#7C3A0C 20px 22px,#9A4E12 22px 42px,#78350F 42px 44px);
+  border:3px solid var(--madera-muy-osc);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.18), inset 0 -3px 0 rgba(0,0,0,.2), 0 4px 0 var(--madera-muy-osc);
+  color:var(--crema);
+}
+
+/* =========================================================
+   2. BARRA DE ESTADO + RADIO
+   ========================================================= */
+.barra{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:8px 12px;
+  border-width:0 0 3px 0;border-radius:0;
+}
+.barra-lugar{font-weight:600;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.monedas{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--crema);color:var(--madera-osc);
+  border:2px solid var(--madera-muy-osc);border-radius:999px;
+  padding:3px 10px;font-weight:700;font-size:.9rem;
+  box-shadow:0 2px 0 var(--madera-muy-osc);
+}
+.monedas.salto{animation:salto-chico .45s ease}
+.radio{
+  display:flex;align-items:center;gap:6px;
+  background:linear-gradient(180deg,#FFFDF7,#FDECC8);
+  color:var(--madera-osc);
+  border:2px solid var(--madera-muy-osc);border-radius:12px;
+  padding:3px 6px 3px 8px;
+  box-shadow:0 2px 0 var(--madera-muy-osc), inset 0 0 0 2px rgba(255,255,255,.6);
+}
+.radio-nota{font-size:1rem;display:inline-block}
+.radio.sonando .radio-nota{animation:nota-baile 1s ease-in-out infinite}
+.radio-etiqueta{font-size:.72rem;font-weight:700;letter-spacing:.04em;display:none}
+.radio-play{
+  width:30px;height:30px;border-radius:50%;
+  border:2px solid var(--madera-muy-osc);
+  background:var(--rojo);color:#fff;font-size:.8rem;line-height:1;
+  display:grid;place-items:center;box-shadow:0 2px 0 var(--rojo-osc);
+}
+.radio-play:active{transform:translateY(2px);box-shadow:none}
+.radio input[type=range]{width:64px;accent-color:var(--rojo)}
+@media (min-width:640px){.radio-etiqueta{display:inline}.radio input[type=range]{width:90px}}
+
+/* =========================================================
+   3. HÉROE
+   ========================================================= */
+.heroe{text-align:center;padding:48px 16px 24px;max-width:860px;margin:0 auto}
+.heroe-chip{
+  display:inline-block;background:var(--amarillo);color:var(--madera-osc);
+  border:2px solid var(--madera-osc);border-radius:999px;padding:4px 14px;
+  font-weight:600;font-size:.85rem;transform:rotate(-2deg);
+  box-shadow:0 3px 0 var(--madera-osc);
+}
+.heroe h1{
+  font-family:var(--fuente-mano);font-weight:400;
+  font-size:clamp(2.4rem,9vw,4.6rem);line-height:1.02;margin:18px 0 10px;
+  color:var(--rojo);
+  text-shadow:3px 3px 0 var(--blanco),5px 5px 0 rgba(30,58,95,.15);
+}
+.heroe h1 .nombre-ella{color:var(--tinta);display:inline-block;animation:flotar 3.4s ease-in-out infinite}
+.heroe p{font-size:clamp(1rem,3.6vw,1.2rem);color:var(--tinta-suave);max-width:560px;margin:0 auto}
+.heroe-personajes{display:flex;justify-content:center;align-items:flex-end;gap:16px;margin:22px auto 6px}
+.personaje{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0}
+.personaje .sprite{width:96px}
+.personaje:first-child .sprite{animation:flotar 3s ease-in-out infinite}
+.personaje:last-child .sprite{animation:flotar 3s ease-in-out .6s infinite}
+.personaje figcaption{font-family:var(--fuente-mano);font-size:1.45rem;line-height:1;color:var(--rojo)}
+.heroe-corazon{width:30px;margin-bottom:60px;animation:latido 1.2s ease-in-out infinite}
+.mapa{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:22px}
+.mapa a{
+  text-decoration:none;font-weight:600;font-size:.9rem;
+  padding:8px 14px;border-radius:12px;
+  transition:transform .15s;
+}
+.mapa a:hover,.mapa a:focus-visible{transform:translateY(-3px) rotate(-1deg)}
+
+/* =========================================================
+   4. SECCIONES GENÉRICAS
+   ========================================================= */
+.seccion{max-width:1040px;margin:0 auto;padding:56px 16px}
+.letrero{
+  display:table;margin:0 auto 10px;
+  font-size:clamp(1.25rem,4.6vw,1.75rem);font-weight:700;
+  padding:10px 26px;border-radius:10px;position:relative;
+  text-shadow:0 2px 0 rgba(0,0,0,.4);transform:rotate(-1deg);
+}
+/* clavitos del letrero */
+.letrero::before,.letrero::after{
+  content:"";position:absolute;top:50%;width:8px;height:8px;border-radius:50%;
+  background:#D6D3D1;box-shadow:inset -1px -1px 0 #57534E;transform:translateY(-50%);
+}
+.letrero::before{left:9px}.letrero::after{right:9px}
+.seccion-sub{text-align:center;color:var(--tinta-suave);margin:0 auto 28px;max-width:560px}
+.tarjeta-papel{
+  background:var(--crema);border-radius:var(--radio);
+  box-shadow:var(--sombra-papel);border:2px solid rgba(30,58,95,.08);
+}
+.boton{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-weight:600;font-size:1rem;
+  padding:12px 20px;border-radius:14px;border:3px solid var(--tinta);
+  background:var(--amarillo);color:var(--tinta);
+  box-shadow:0 4px 0 var(--tinta);transition:transform .1s, box-shadow .1s;
+}
+.boton:hover{transform:translateY(-1px)}
+.boton:active{transform:translateY(3px);box-shadow:0 1px 0 var(--tinta)}
+.boton:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.boton.rojo{background:var(--rojo);color:#fff;border-color:var(--rojo-osc);box-shadow:0 4px 0 var(--rojo-osc)}
+.boton.secundario{background:var(--blanco);font-size:.92rem}
+:focus-visible{outline:3px dashed var(--rojo);outline-offset:3px}
+.sprite{display:inline-block;line-height:0}
+.sprite svg{width:100%;height:auto;display:block;overflow:visible}
+.icono{display:inline-block;line-height:0}
+.icono svg{width:100%;height:auto;display:block}
+
+/* =========================================================
+   5. BUZÓN DIARIO
+   ========================================================= */
+.buzon-zona{display:grid;gap:24px;align-items:center}
+@media (min-width:820px){.buzon-zona{grid-template-columns:1fr 1fr}}
+.buzon-btn{background:none;border:0;padding:0;display:block;width:100%;max-width:440px;margin:0 auto;position:relative}
+.buzon-btn:hover .caja-buzon{filter:brightness(1.06)}
+.buzon-pista{
+  position:absolute;right:4%;top:2%;
+  background:var(--amarillo);border:2px solid var(--madera-osc);border-radius:12px;
+  padding:4px 10px;font-weight:600;font-size:.85rem;color:var(--madera-osc);
+  animation:flotar 2.2s ease-in-out infinite;
+}
+.buzon-btn.leido .buzon-pista{display:none}
+.bandera{transform-origin:291px 112px;transition:transform .6s cubic-bezier(.5,1.6,.5,1)}
+.buzon-btn.leido .bandera{transform:rotate(90deg)}
+.puerta-buzon{transform-origin:232px 126px;transition:transform .5s ease}
+.buzon-btn.abriendo .puerta-buzon,.buzon-btn.leido .puerta-buzon{transform:rotate(-75deg)}
+.sobre{opacity:0;transition:opacity .3s, transform .6s ease;transform:translateX(0)}
+.buzon-btn.abriendo .sobre{opacity:1;transform:translateX(-26px)}
+.humo{animation:humo 4s ease-in infinite;opacity:0}
+.humo:nth-child(2){animation-delay:1.3s}.humo:nth-child(3){animation-delay:2.6s}
+.ventana-luz{animation:titilar 3s ease-in-out infinite}
+
+.postal-zona{perspective:900px;min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.postal{
+  width:100%;max-width:460px;position:relative;
+  padding:28px 22px 20px;
+  background:
+    repeating-linear-gradient(180deg,transparent 0 33px,rgba(59,130,246,.14) 33px 34px),
+    var(--crema);
+  border-radius:12px;box-shadow:var(--sombra-papel);
+  border:2px solid rgba(30,58,95,.1);
+  transform-origin:top center;
+}
+.postal.oculta{display:none}
+.postal.desplegar{animation:desplegar .8s cubic-bezier(.3,1.4,.5,1) both}
+.estampilla{
+  position:absolute;top:14px;right:14px;width:62px;height:72px;
+  background:var(--nieve-2);border:3px dotted #fff;outline:2px solid var(--rojo);
+  display:grid;place-items:center;transform:rotate(4deg);
+}
+.estampilla svg{width:36px}
+.matasellos{
+  position:absolute;top:20px;right:62px;width:62px;height:62px;border-radius:50%;
+  border:2px solid rgba(230,57,70,.55);color:rgba(230,57,70,.7);
+  display:grid;place-items:center;text-align:center;font-size:.55rem;font-weight:700;line-height:1.15;
+  transform:rotate(-14deg);letter-spacing:.05em;
+}
+.postal-fecha{font-size:.82rem;color:var(--tinta-suave);font-weight:500;margin:0 0 6px;padding-right:130px}
+.postal-para{font-family:var(--fuente-mano);font-size:1.3rem;margin:0 0 24px;padding-right:130px;color:var(--rojo)}
+.postal-frase{font-family:var(--fuente-mano);font-size:clamp(1.35rem,4.6vw,1.6rem);line-height:34px;margin:6px 0 10px;min-height:68px}
+.postal-firma{font-family:var(--fuente-mano);font-size:1.2rem;text-align:right;margin:0;color:var(--tinta-suave)}
+.postal-nota{font-size:.82rem;color:var(--tinta-suave);text-align:center;margin:0}
+.postal-espera{text-align:center;color:var(--tinta-suave);font-family:var(--fuente-mano);font-size:1.4rem;padding:20px}
+.extra{
+  width:100%;max-width:460px;text-align:center;
+}
+.extra-frase{
+  margin-top:12px;padding:14px 16px;border-radius:14px;
+  background:var(--amarillo);border:2px dashed var(--madera-osc);
+  font-weight:500;display:none;
+}
+.extra-frase.ver{display:block;animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+
+/* =========================================================
+   6. TARJETAS DESBLOQUEABLES
+   ========================================================= */
+.tarjetas{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:680px){.tarjetas{grid-template-columns:repeat(2,1fr)}}
+.tarjeta{position:relative;padding:18px;min-height:300px;display:flex;flex-direction:column;overflow:hidden}
+.tarjeta-cabeza{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.tarjeta-num{
+  width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;
+  background:var(--tinta);color:#fff;font-weight:700;
+}
+.tarjeta h3{margin:0;font-size:1.1rem}
+.tarjeta .instruccion{margin:0 0 10px;color:var(--tinta-suave);font-size:.92rem}
+.candado svg{width:18px;height:18px}
+.candado{
+  position:absolute;top:14px;right:14px;
+  background:var(--nieve-1);border:2px solid var(--nieve-3);border-radius:10px;padding:2px 8px;
+}
+.mision{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;position:relative}
+.razon{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px}
+.tarjeta.desbloqueada .mision,.tarjeta.desbloqueada .candado{display:none}
+.tarjeta.desbloqueada .razon{display:flex;animation:pop .6s cubic-bezier(.3,1.6,.5,1)}
+.tarjeta.desbloqueada{background:linear-gradient(160deg,#FFFDF7 0%,#FEF9C3 100%)}
+.logro{
+  font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--rojo);color:#fff;border-radius:999px;padding:4px 12px;
+}
+.razon p{font-family:var(--fuente-mano);font-size:1.45rem;line-height:1.25;margin:0}
+.signos{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.08;font-size:3rem;font-weight:700}
+.signos span{position:absolute}
+
+/* Tarjeta 1: cosquillas */
+.yopis-btn{background:none;border:0;padding:0;width:130px;touch-action:manipulation}
+.yopis-btn.cosquilla{animation:cosquilla .25s ease}
+.yopis-btn.riendo{animation:riendo .18s linear 6}
+.ojos-risa,.boca-risa{display:none}
+.yopis-btn.riendo .ojos-risa,.yopis-btn.riendo .boca-risa{display:inline}
+.yopis-btn.riendo .ojos-normal,.yopis-btn.riendo .boca-normal{display:none}
+.puntos{display:flex;gap:6px}
+.puntos i{width:12px;height:12px;border-radius:50%;background:#CBD5E1;display:block;transition:background .15s, transform .15s}
+.puntos i.on{background:var(--rojo);transform:scale(1.25)}
+.jaja{position:absolute;font-weight:700;color:var(--rojo);pointer-events:none;animation:subir 1s ease-out forwards}
+
+/* Tarjeta 2: alimentar */
+.comedor{display:flex;align-items:center;justify-content:center;gap:28px;width:100%}
+.foca-comedor{width:120px}
+.foca-comedor.ñam .boca{animation:ñam .2s linear 4}
+.foca-comedor.ñam{animation:salto-chico .5s ease}
+.comidas{display:flex;flex-direction:column;gap:10px}
+.comida{
+  font-size:2.4rem;line-height:1;background:var(--blanco);border:2px dashed var(--nieve-3);
+  border-radius:16px;padding:8px;touch-action:none;user-select:none;cursor:grab;line-height:0;
+}
+.comida .icono{pointer-events:none}
+.comida svg{width:46px;height:46px}
+.comida.arrastrando{cursor:grabbing;z-index:10;position:relative;box-shadow:0 10px 20px rgba(0,0,0,.2)}
+.comida.volando{transition:transform .5s cubic-bezier(.5,-0.3,.6,1.2)}
+.comida.comida-ida{transform:scale(0)!important;opacity:0;transition:transform .25s, opacity .25s}
+
+/* Tarjeta 3: botón escurridizo */
+.arena{position:relative;width:100%;height:160px;border-radius:14px;background:repeating-linear-gradient(45deg,#F0F9FF 0 12px,#E0F2FE 12px 24px)}
+.escurridizo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;transition:left .25s cubic-bezier(.5,1.5,.5,1),top .25s cubic-bezier(.5,1.5,.5,1)}
+.escurridizo.movido{transform:none}
+.escurridizo.rendido{animation:latido 1s ease-in-out infinite}
+
+/* Tarjeta 4: test */
+.test-pregunta{font-weight:600;text-align:center;margin:0}
+.test-opciones{display:grid;gap:8px;width:100%}
+.test-opciones button{
+  text-align:left;padding:10px 14px;border-radius:12px;border:2px solid var(--nieve-3);
+  background:var(--blanco);font-size:.95rem;color:var(--tinta);transition:transform .12s, background .12s;
+}
+.test-opciones button:hover{background:var(--nieve-1);transform:translateX(3px)}
+.test-cargando{font-weight:600;color:var(--tinta-suave)}
+.test-resultado{font-weight:600;font-size:.88rem;color:var(--tinta-suave)}
+.tarjeta[data-tarjeta="4"] .razon p{font-size:1.32rem}
+
+.final-tarjetas{
+  display:none;text-align:center;margin-top:22px;padding:22px;
+  border-radius:var(--radio);
+}
+.final-tarjetas.ver{display:block;animation:pop .6s cubic-bezier(.3,1.6,.5,1)}
+.final-tarjetas h3{font-family:var(--fuente-mano);font-weight:400;font-size:2rem;margin:0 0 6px;text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.final-tarjetas p{margin:0}
+
+/* =========================================================
+   7. MINIJUEGO DE PIZZAS
+   ========================================================= */
+.pz{padding:14px;border-radius:22px;position:relative}
+.pz-hud{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-weight:600}
+.pz-hud span{background:rgba(0,0,0,.25);padding:4px 10px;border-radius:10px}
+.pz-cocina{background:#FFF7ED;border-radius:16px;padding:12px;color:var(--tinta);position:relative;overflow:hidden}
+.ticket{
+  background:var(--blanco);border-radius:6px 6px 0 0;
+  padding:10px 12px 14px;margin:0 auto 12px;max-width:420px;text-align:center;
+  box-shadow:0 3px 8px rgba(0,0,0,.12);position:relative;
+  /* borde dentado del ticket */
+  -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 8px) no-repeat, radial-gradient(circle 6px at 8px 100%,transparent 98%,#000) bottom left/16px 9px repeat-x;
+          mask:linear-gradient(#000 0 0) top/100% calc(100% - 8px) no-repeat, radial-gradient(circle 6px at 8px 100%,transparent 98%,#000) bottom left/16px 9px repeat-x;
+}
+.ticket small{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-suave)}
+.ticket-items{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;font-size:1.15rem;font-weight:600;margin-top:4px;min-height:32px}
+.pz-item svg{width:20px;height:20px;vertical-align:-4px;display:inline-block;margin-right:2px}
+.vidas svg{width:18px;height:18px;vertical-align:-3px;display:inline-block;margin-left:2px}
+.pz-icono{width:72px}
+.pz-item{padding:2px 8px;border-radius:8px;background:var(--nieve-1);transition:background .2s}
+.pz-item.ok{background:#BBF7D0;text-decoration:line-through;text-decoration-thickness:2px}
+.banda{
+  --pz-size:92px;
+  position:relative;height:140px;border-radius:12px;overflow:hidden;
+  background:
+    repeating-linear-gradient(90deg,#475569 0 26px,#334155 26px 30px);
+  background-size:30px 100%;
+  border-top:8px solid #94A3B8;border-bottom:8px solid #94A3B8;
+  animation:banda 1.2s linear infinite paused;
+}
+.banda.andando{animation-play-state:running}
+@media (min-width:640px){.banda{--pz-size:110px;height:156px}}
+.pz-pizza{position:absolute;top:50%;left:0;width:var(--pz-size);height:var(--pz-size);will-change:transform}
+.pz-cuerpo{
+  width:100%;height:100%;border-radius:50%;position:relative;
+  background:radial-gradient(circle,#DC2626 0 58%,#F59E0B 59% 66%,#FCD34D 67% 100%);
+  box-shadow:0 6px 0 rgba(0,0,0,.25);
+}
+.pz-pizza.ok .pz-cuerpo{animation:pizza-ok .6s ease-in forwards}
+.pz-pizza.mal .pz-cuerpo{animation:pizza-mal .7s ease-in forwards}
+.topping svg{width:100%;height:auto;display:block}
+.topping{position:absolute;width:calc(var(--pz-size) * .22);transform:translate(-50%,-50%);animation:caer .25s ease-out}
+.ingredientes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.ing{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:10px 4px;border-radius:14px;border:3px solid var(--madera-osc);
+  background:var(--crema);color:var(--madera-osc);font-weight:600;font-size:.72rem;
+  box-shadow:0 4px 0 var(--madera-osc);touch-action:manipulation;
+}
+.ing .icono{width:34px;margin-bottom:2px}
+.ing kbd{font-family:inherit;font-size:.65rem;opacity:.6;display:none}
+@media (hover:hover){.ing kbd{display:block}}
+.ing:active{transform:translateY(3px);box-shadow:0 1px 0 var(--madera-osc)}
+.pz-mensaje{min-height:24px;text-align:center;font-weight:600;margin:8px 0 0;color:var(--madera-osc)}
+.pz-overlay{
+  position:absolute;inset:0;z-index:5;border-radius:16px;
+  background:rgba(255,253,247,.94);backdrop-filter:blur(2px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:18px;gap:12px;
+}
+.pz-overlay[hidden]{display:none}
+.pz-overlay h3{margin:0;font-size:1.4rem}
+.pz-overlay p{margin:0;max-width:420px;color:var(--tinta-suave)}
+.cupon{
+  position:relative;max-width:420px;width:100%;
+  background:linear-gradient(135deg,#FEF9C3,#FDE047);
+  border:3px dashed var(--rojo);border-radius:16px;padding:20px 18px;
+  box-shadow:0 10px 24px -6px rgba(0,0,0,.25);
+  animation:cupon-entrar .9s cubic-bezier(.3,1.5,.5,1) both;
+}
+.cupon::before,.cupon::after{content:"";position:absolute;top:50%;width:26px;height:26px;border-radius:50%;background:#FFFDF7;transform:translateY(-50%)}
+.cupon::before{left:-15px}.cupon::after{right:-15px}
+.cupon h4{margin:0 0 6px;font-size:1.1rem;color:var(--rojo)}
+.cupon .cupon-premio{font-family:var(--fuente-mano);font-size:1.6rem;margin:6px 0;color:var(--tinta)}
+.cupon small{color:var(--madera-osc);font-weight:500}
+.sello{
+  position:absolute;right:10px;bottom:-14px;
+  border:3px solid var(--rojo);color:var(--rojo);background:rgba(255,255,255,.7);
+  font-weight:700;font-size:.8rem;padding:4px 10px;border-radius:8px;
+  transform:rotate(-12deg);animation:sellar .5s .8s cubic-bezier(.3,1.8,.5,1) both;
+}
+
+/* =========================================================
+   8. CABINA DE APAPACHOS
+   ========================================================= */
+.cabina-zona{display:grid;gap:24px;align-items:start}
+@media (min-width:820px){.cabina-zona{grid-template-columns:.9fr 1.1fr}}
+.cabina-dibujo{max-width:360px;margin:0 auto;width:100%}
+.panel-animo{padding:20px}
+.panel-animo h3{margin:0 0 4px}
+.panel-animo>p{margin:0 0 14px;color:var(--tinta-suave)}
+.animos{display:flex;flex-wrap:wrap;gap:8px;border:0;padding:0;margin:0 0 16px}
+.animos legend{margin-bottom:8px;font-weight:600}
+.animo input{position:absolute;opacity:0;pointer-events:none}
+.animo span{
+  display:inline-block;padding:9px 14px;border-radius:999px;cursor:pointer;
+  border:2px solid var(--nieve-3);background:var(--blanco);font-weight:500;
+  transition:transform .12s, background .12s;
+}
+.animo span:hover{transform:translateY(-2px)}
+.animo input:checked+span{background:var(--rojo);color:#fff;border-color:var(--rojo-osc);box-shadow:0 3px 0 var(--rojo-osc)}
+.animo input:focus-visible+span{outline:3px dashed var(--rojo);outline-offset:2px}
+.dosis{margin-top:18px;padding:18px;border-radius:16px;background:var(--nieve-1);border:2px solid var(--nieve-2);display:none}
+.dosis.ver{display:block;animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+.dosis-msg{font-family:var(--fuente-mano);font-size:1.45rem;line-height:1.3;margin:10px 0}
+.receta{background:var(--blanco);border-left:5px solid var(--rojo);padding:8px 12px;border-radius:6px;font-size:.9rem}
+.receta b{color:var(--rojo)}
+.abrazo{display:flex;justify-content:center;align-items:flex-end;gap:4px;position:relative;padding-top:18px}
+.abrazo .personaje .sprite{width:84px}
+.abrazo .personaje figcaption{font-size:1.2rem}
+.abrazo .personaje:first-of-type .sprite{animation:abrazo-izq 1.6s ease-in-out infinite}
+.abrazo .personaje:last-of-type .sprite{animation:abrazo-der 1.6s ease-in-out infinite}
+.abrazo-corazon{position:absolute;top:0;left:50%;width:26px;margin-left:-13px;animation:latido 1.2s ease-in-out infinite}
+
+/* =========================================================
+   9. GUARDIÁN MOCHI (esquina fija)
+   ========================================================= */
+.guardian{
+  position:fixed;right:12px;bottom:12px;z-index:60;
+  width:76px;background:none;border:0;padding:0;
+}
+@media (min-width:640px){.guardian{width:96px;right:20px;bottom:20px}}
+.guardian.salto .sprite{animation:salto-grande .6s cubic-bezier(.3,1.6,.5,1)}
+.guardian .ojo-der,.guardian .ojo-izq{transform-box:fill-box;transform-origin:center;transition:transform .12s}
+.guardian.guino .ojo-der{transform:scaleY(.12)}
+.burbuja{
+  position:fixed;right:12px;bottom:100px;z-index:61;max-width:220px;
+  background:var(--blanco);border:3px solid var(--tinta);border-radius:16px;
+  padding:10px 12px;font-weight:500;font-size:.9rem;
+  box-shadow:0 4px 0 var(--tinta);opacity:0;transform:translateY(8px) scale(.9);
+  transition:opacity .2s, transform .2s;pointer-events:none;
+}
+.burbuja::after{content:"";position:absolute;right:30px;bottom:-12px;border:10px solid transparent;border-top-color:var(--tinta);border-bottom:0}
+.burbuja.ver{opacity:1;transform:none}
+@media (min-width:640px){.burbuja{right:24px;bottom:132px}}
+.acc{display:none}
+[data-acc="bufanda"] .acc-bufanda,
+[data-acc="gorro"] .acc-gorro,
+[data-acc="moño"] .acc-moño,
+[data-acc="orejeras"] .acc-orejeras{display:inline}
+
+/* =========================================================
+   10. PARTÍCULAS DE CLIC + PIE
+   ========================================================= */
+.particula svg{width:100%;height:100%;display:block}
+.particula{
+  position:fixed;z-index:999;pointer-events:none;width:18px;height:18px;line-height:0;
+  animation:particula 1.1s ease-out forwards;
+}
+footer{text-align:center;padding:40px 16px 120px;color:var(--tinta-suave)}
+footer .firma{font-family:var(--fuente-mano);font-size:1.5rem;color:var(--rojo);margin:0 0 6px}
+.reiniciar{background:none;border:0;color:var(--tinta-suave);text-decoration:underline;font-size:.8rem;margin-top:8px}
+.olas{display:block;width:100%;height:60px;margin-top:20px}
+
+/* =========================================================
+   11. ANIMACIONES
+   ========================================================= */
+@keyframes flotar{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes latido{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+@keyframes salto-chico{0%,100%{transform:translateY(0)}40%{transform:translateY(-8px) scale(1.05)}}
+@keyframes salto-grande{0%{transform:translateY(0)}35%{transform:translateY(-34px) rotate(-8deg)}65%{transform:translateY(0) scaleY(.85)}100%{transform:none}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes desplegar{0%{transform:rotateX(-90deg) translateY(-30px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes humo{0%{transform:translate(0,0) scale(.6);opacity:0}20%{opacity:.8}100%{transform:translate(14px,-46px) scale(1.6);opacity:0}}
+@keyframes titilar{0%,100%{opacity:1}50%{opacity:.82}}
+@keyframes nota-baile{0%,100%{transform:rotate(-12deg) translateY(0)}50%{transform:rotate(12deg) translateY(-3px)}}
+@keyframes cosquilla{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@keyframes riendo{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-5px) rotate(3deg)}}
+@keyframes subir{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-50px);opacity:0}}
+@keyframes ñam{0%,100%{transform:scaleY(1)}50%{transform:scaleY(2.4)}}
+@keyframes banda{to{background-position:30px 0}}
+@keyframes caer{0%{transform:translate(-50%,-160%) scale(1.4);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes pizza-ok{0%{transform:scale(1)}30%{transform:scale(1.15)}100%{transform:translateY(-120px) scale(.4);opacity:0}}
+@keyframes pizza-mal{0%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(12deg);filter:grayscale(.4) brightness(.6)}100%{transform:translateY(80px) rotate(30deg);opacity:0;filter:grayscale(1) brightness(.3)}}
+@keyframes cupon-entrar{0%{transform:scale(.3) rotate(-20deg);opacity:0}100%{transform:rotate(-2deg);opacity:1}}
+@keyframes sellar{0%{transform:scale(3) rotate(-12deg);opacity:0}100%{transform:scale(1) rotate(-12deg);opacity:1}}
+@keyframes abrazo-izq{0%,100%{transform:translateX(0) rotate(0)}50%{transform:translateX(8px) rotate(8deg)}}
+@keyframes abrazo-der{0%,100%{transform:translateX(0) rotate(0)}50%{transform:translateX(-8px) rotate(-8deg)}}
+@keyframes particula{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% - 70px)) scale(1.1) rotate(var(--rot));opacity:0}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+
+<body>
+<canvas id="nieve" aria-hidden="true"></canvas>
+
+<!-- ============ BARRA DE ESTADO ============ -->
+<header class="barra madera">
+  <span class="barra-lugar">❄️ El iglú de <span data-ella>Mi Amor</span></span>
+  <span class="monedas" id="monedas" title="Monedas de cariño ganadas">💗 <b id="monedas-num">0</b></span>
+  <div class="radio" id="radio">
+    <span class="radio-nota" aria-hidden="true">🎵</span>
+    <span class="radio-etiqueta">Radio Iglú</span>
+    <button class="radio-play" id="radio-play" aria-label="Reproducir música">▶</button>
+    <label class="visualmente-oculto" for="radio-vol">Volumen</label>
+    <input type="range" id="radio-vol" min="0" max="100" value="45">
+  </div>
+</header>
+
+<main>
+  <!-- ============ HÉROE ============ -->
+  <section class="heroe">
+    <span class="heroe-chip">Correo especial del iglú</span>
+    <h1>Hola, <span class="nombre-ella" data-ella>Mi Amor</span></h1>
+    <!-- ✏️ PERSONALIZA: el subtítulo del inicio -->
+    <p>Esta página está pensada para que sonrías un ratito todos los días mi amor. Te amo con todo mi ser. Eres increíble si?</p>
+    <div class="heroe-personajes">
+      <!-- ✏️ PERSONALIZA: los nombres debajo de cada foquita -->
+      <figure class="personaje"><span class="sprite" data-sprite="foca" data-acc="gorro" aria-hidden="true"></span><figcaption>tú cielo</figcaption></figure>
+      <span class="heroe-corazon icono" data-icono="corazon" aria-hidden="true"></span>
+      <figure class="personaje"><span class="sprite" data-sprite="yopis" aria-hidden="true"></span><figcaption>yopis</figcaption></figure>
+    </div>
+    <nav class="mapa" aria-label="Secciones">
+      <a class="madera" href="#buzon">Buzón</a>
+      <a class="madera" href="#razones">Razones</a>
+      <a class="madera" href="#pizzeria">Pizzería</a>
+      <a class="madera" href="#apapacho">Apapachos</a>
+    </nav>
+  </section>
+
+  <!-- ============ B. BUZÓN DIARIO ============ -->
+  <section class="seccion" id="buzon">
+    <h2 class="letrero madera">El Buzón Diario</h2>
+    <p class="seccion-sub">Cada día llega una postal nueva. Toca el buzón para abrir la de hoy.</p>
+
+    <div class="buzon-zona">
+      <button class="buzon-btn" id="buzon-btn" aria-label="Abrir el buzón y leer la postal de hoy">
+        <span class="buzon-pista">¡Tienes correo!</span>
+        <svg viewBox="0 0 320 220" aria-hidden="true">
+          <!-- suelo nevado -->
+          <ellipse cx="160" cy="204" rx="160" ry="20" fill="#fff"/>
+          <!-- humo de la chimenea -->
+          <g fill="#fff">
+            <circle class="humo" cx="168" cy="36" r="8"/>
+            <circle class="humo" cx="168" cy="36" r="8"/>
+            <circle class="humo" cx="168" cy="36" r="8"/>
+          </g>
+          <!-- chimenea -->
+          <rect x="158" y="40" width="20" height="36" fill="#7F1D1D" stroke="#4A2307" stroke-width="3"/>
+          <rect x="154" y="34" width="28" height="9" rx="2" fill="#fff" stroke="#CBD5E1" stroke-width="2"/>
+          <!-- paredes de troncos -->
+          <rect x="44" y="92" width="166" height="104" fill="#92400E" stroke="#4A2307" stroke-width="3"/>
+          <g stroke="#78350F" stroke-width="3">
+            <line x1="44" y1="112" x2="210" y2="112"/><line x1="44" y1="132" x2="210" y2="132"/>
+            <line x1="44" y1="152" x2="210" y2="152"/><line x1="44" y1="172" x2="210" y2="172"/>
+          </g>
+          <!-- techo -->
+          <polygon points="30,98 127,34 224,98" fill="#E63946" stroke="#7F1D1D" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M30 98 Q40 86 52 92 Q66 80 80 88 Q96 74 110 82 Q127 66 144 82 Q160 74 174 88 Q190 80 202 92 Q214 86 224 98 Q127 92 30 98Z" fill="#fff"/>
+          <!-- ventana -->
+          <rect class="ventana-luz" x="62" y="118" width="40" height="36" rx="4" fill="#FDE047" stroke="#4A2307" stroke-width="3"/>
+          <line x1="82" y1="118" x2="82" y2="154" stroke="#4A2307" stroke-width="3"/>
+          <line x1="62" y1="136" x2="102" y2="136" stroke="#4A2307" stroke-width="3"/>
+          <!-- corazón en la ventana -->
+          <path d="M72 128 c0-4 6-4 6 0 c0-4 6-4 6 0 c0 4-6 7-6 9 c0-2-6-5-6-9z" fill="#E63946" opacity=".8"/>
+          <!-- puerta -->
+          <rect x="128" y="132" width="44" height="64" rx="20" ry="20" fill="#E63946" stroke="#7F1D1D" stroke-width="3"/>
+          <circle cx="162" cy="166" r="3.5" fill="#FDE047"/>
+          <!-- corona de la puerta -->
+          <circle cx="150" cy="150" r="9" fill="none" stroke="#16A34A" stroke-width="5"/>
+          <!-- poste del buzón -->
+          <rect x="256" y="124" width="10" height="76" fill="#78350F" stroke="#4A2307" stroke-width="2"/>
+          <!-- sobre (aparece al abrir) -->
+          <g class="sobre">
+            <rect x="236" y="104" width="34" height="20" rx="2" fill="#FFFDF7" stroke="#94A3B8" stroke-width="2"/>
+            <path d="M236 104 L253 116 L270 104" fill="none" stroke="#94A3B8" stroke-width="2"/>
+          </g>
+          <!-- caja del buzón -->
+          <path class="caja-buzon" d="M234 126 L234 104 Q234 90 250 90 L278 90 Q294 90 294 104 L294 126Z" fill="#E63946" stroke="#7F1D1D" stroke-width="3"/>
+          <rect x="238" y="114" width="52" height="3" fill="#B91C2C"/>
+          <!-- puerta del buzón -->
+          <path class="puerta-buzon" d="M232 126 L232 102 Q232 92 240 92 L240 126Z" fill="#B91C2C" stroke="#7F1D1D" stroke-width="2"/>
+          <!-- bandera -->
+          <g class="bandera">
+            <rect x="289" y="74" width="4" height="40" fill="#4A2307"/>
+            <rect x="293" y="74" width="18" height="12" rx="2" fill="#FACC15" stroke="#854D0E" stroke-width="2"/>
+          </g>
+          <!-- nieve sobre el buzón -->
+          <path d="M240 92 Q252 82 264 90 Q276 82 290 92Z" fill="#fff"/>
+        </svg>
+      </button>
+
+      <div class="postal-zona">
+        <div class="postal-espera" id="postal-espera">La postal de hoy te está esperando adentro del buzón</div>
+        <article class="postal oculta" id="postal" aria-live="polite">
+          <div class="estampilla icono" data-icono="copo" aria-hidden="true"></div>
+          <div class="matasellos" aria-hidden="true">CORREO<br>DEL<br>IGLÚ</div>
+          <p class="postal-fecha" id="postal-fecha"></p>
+          <p class="postal-para">Para: <span data-ella>Mi Amor</span></p>
+          <p class="postal-frase" id="postal-frase"></p>
+          <p class="postal-firma">— Con amor, <span data-yo>Chris</span></p>
+        </article>
+        <p class="postal-nota" id="postal-nota"></p>
+        <div class="extra">
+          <button class="boton secundario" id="btn-extra">¿Día pesado? Clic aquí para dosis extra no autorizada</button>
+          <div class="extra-frase" id="extra-frase" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ C. TARJETAS DESBLOQUEABLES ============ -->
+  <section class="seccion" id="razones">
+    <h2 class="letrero madera">Razones para estar juntos todo el tiempo</h2>
+    <p class="seccion-sub">Cuatro logros secretos. Completa cada misión para desbloquear su razón.</p>
+
+    <div class="tarjetas">
+      <!-- Tarjeta 1 -->
+      <article class="tarjeta tarjeta-papel" data-tarjeta="1">
+        <span class="candado icono" data-icono="candado" role="img" aria-label="Bloqueada"></span>
+        <div class="tarjeta-cabeza"><span class="tarjeta-num">1</span><h3>Cosquillas a Yopis</h3></div>
+        <div class="mision">
+          <p class="instruccion">Hazle cosquillas: 3 toques rapiditos seguidos.</p>
+          <button class="yopis-btn sprite" id="yopis-btn" data-sprite="yopis" aria-label="Hacerle cosquillas a Yopis"></button>
+          <div class="puntos" id="cosquillas-puntos" aria-hidden="true"><i></i><i></i><i></i></div>
+        </div>
+        <div class="razon"><span class="logro">¡Logro desbloqueado!</span><p data-razon="0"></p></div>
+      </article>
+
+      <!-- Tarjeta 2 -->
+      <article class="tarjeta tarjeta-papel" data-tarjeta="2">
+        <span class="candado icono" data-icono="candado" role="img" aria-label="Bloqueada"></span>
+        <div class="tarjeta-cabeza"><span class="tarjeta-num">2</span><h3>Alimentar a Mochi</h3></div>
+        <div class="mision">
+          <p class="instruccion">Arrastra la comida hasta Mochi (o tócala).</p>
+          <div class="comedor">
+            <span class="sprite foca-comedor" id="foca-comedor" data-sprite="foca" data-acc="bufanda"></span>
+            <div class="comidas">
+              <button class="comida" aria-label="Darle pizza a Mochi"><span class="icono" data-icono="pizza"></span></button>
+              <button class="comida" aria-label="Darle pescadito a Mochi"><span class="icono" data-icono="pez"></span></button>
+            </div>
+          </div>
+        </div>
+        <div class="razon"><span class="logro">¡Logro desbloqueado!</span><p data-razon="1"></p></div>
+      </article>
+
+      <!-- Tarjeta 3 -->
+      <article class="tarjeta tarjeta-papel" data-tarjeta="3">
+        <span class="candado icono" data-icono="candado" role="img" aria-label="Bloqueada"></span>
+        <div class="tarjeta-cabeza"><span class="tarjeta-num">3</span><h3>El botón escurridizo</h3></div>
+        <div class="mision">
+          <p class="instruccion">Atrapa el botón… si puedes.</p>
+          <div class="arena" id="arena">
+            <button class="boton rojo escurridizo" id="escurridizo">Ábreme</button>
+          </div>
+        </div>
+        <div class="razon"><span class="logro">¡Logro desbloqueado!</span><p data-razon="2"></p></div>
+      </article>
+
+      <!-- Tarjeta 4 -->
+      <article class="tarjeta tarjeta-papel" data-tarjeta="4">
+        <span class="candado icono" data-icono="candado" role="img" aria-label="Bloqueada"></span>
+        <div class="tarjeta-cabeza"><span class="tarjeta-num">4</span><h3>Test de Compatibilidad Infalible</h3></div>
+        <div class="mision" id="test">
+          <p class="test-pregunta" id="test-pregunta"></p>
+          <div class="test-opciones" id="test-opciones"></div>
+        </div>
+        <div class="razon"><span class="logro">¡Logro desbloqueado!</span><p data-razon="3"></p></div>
+      </article>
+    </div>
+
+    <div class="final-tarjetas madera" id="final-tarjetas" aria-live="polite">
+      <h3>¡Desbloqueaste todo!</h3>
+      <!-- ✏️ PERSONALIZA: mensaje al desbloquear las 4 tarjetas -->
+      <p>Conclusión científica: estamos hechos para estar juntos. Ya no hay vuelta atrás.</p>
+    </div>
+  </section>
+
+  <!-- ============ D. MINIJUEGO DE PIZZAS ============ -->
+  <section class="seccion" id="pizzeria">
+    <h2 class="letrero madera">Pizzería del Amor 3000</h2>
+    <p class="seccion-sub">Arma 5 pizzas siguiendo el pedido antes de que se escapen por la banda. Si pones un ingrediente de más, se quema.</p>
+
+    <div class="pz madera">
+      <div class="pz-hud">
+        <span>Pizzas: <b id="pz-score">0</b>/5</span>
+        <span id="pz-vidas" class="vidas" aria-label="Vidas"></span>
+      </div>
+      <div class="pz-cocina">
+        <div class="ticket">
+          <small>Pedido de la mesa 1</small>
+          <div class="ticket-items" id="ticket" aria-live="polite">—</div>
+        </div>
+        <div class="banda" id="banda"></div>
+        <p class="pz-mensaje" id="pz-mensaje" aria-live="polite"></p>
+        <div class="ingredientes" id="ingredientes"></div>
+
+        <div class="pz-overlay" id="pz-overlay"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ E. CABINA DE APAPACHOS ============ -->
+  <section class="seccion" id="apapacho">
+    <h2 class="letrero madera">Cabina de Apapachos</h2>
+    <p class="seccion-sub">Atención 24/7. Sin cita previa. Pagas con una sonrisa (o con nada, también se acepta).</p>
+
+    <div class="cabina-zona">
+      <div class="cabina-dibujo">
+        <svg viewBox="0 0 300 250" aria-hidden="true">
+          <ellipse cx="150" cy="240" rx="150" ry="12" fill="#fff"/>
+          <!-- postes -->
+          <rect x="34" y="40" width="12" height="190" fill="#78350F" stroke="#4A2307" stroke-width="3"/>
+          <rect x="254" y="40" width="12" height="190" fill="#78350F" stroke="#4A2307" stroke-width="3"/>
+          <!-- toldo a rayas -->
+          <path d="M20 44 L280 44 L280 74 Q267 88 254 74 Q241 88 228 74 Q215 88 202 74 Q189 88 176 74 Q163 88 150 74 Q137 88 124 74 Q111 88 98 74 Q85 88 72 74 Q59 88 46 74 Q33 88 20 74Z" fill="#fff" stroke="#7F1D1D" stroke-width="3"/>
+          <g fill="#E63946">
+            <path d="M20 44 h26 v30 Q33 88 20 74Z"/><path d="M72 44 h26 v30 Q85 88 72 74Z"/>
+            <path d="M124 44 h26 v30 Q137 88 124 74Z"/><path d="M176 44 h26 v30 Q189 88 176 74Z"/>
+            <path d="M228 44 h26 v30 Q241 88 228 74Z"/>
+          </g>
+          <!-- letrero -->
+          <rect x="62" y="6" width="176" height="34" rx="6" fill="#854D0E" stroke="#4A2307" stroke-width="3"/>
+          <text x="150" y="29" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="16" fill="#FFFDF7" textLength="150" lengthAdjust="spacingAndGlyphs">ABRAZOS Y MIMOS</text>
+          <!-- Mochi detrás del mostrador -->
+          <g transform="translate(104 92) scale(.78)">
+            <path d="M20 78 C20 40 40 22 60 22 C80 22 100 40 100 78 L100 110 L20 110Z" fill="#F8FAFC" stroke="#94A3B8" stroke-width="3"/>
+            <circle cx="46" cy="58" r="7" fill="#1E293B"/><circle cx="48.5" cy="55.5" r="2.4" fill="#fff"/>
+            <circle cx="74" cy="58" r="7" fill="#1E293B"/><circle cx="76.5" cy="55.5" r="2.4" fill="#fff"/>
+            <ellipse cx="36" cy="72" rx="6" ry="3.5" fill="#FDA4AF"/><ellipse cx="84" cy="72" rx="6" ry="3.5" fill="#FDA4AF"/>
+            <ellipse cx="60" cy="67" rx="4.5" ry="3" fill="#334155"/>
+            <path d="M55 76 Q60 81 65 76" stroke="#334155" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <path d="M34 22 Q60 -4 86 22 Q60 14 34 22Z" fill="#E63946"/><circle cx="60" cy="4" r="7" fill="#fff"/>
+          </g>
+          <!-- mostrador -->
+          <rect x="24" y="168" width="252" height="66" rx="4" fill="#92400E" stroke="#4A2307" stroke-width="3"/>
+          <g stroke="#78350F" stroke-width="3"><line x1="24" y1="190" x2="276" y2="190"/><line x1="24" y1="212" x2="276" y2="212"/></g>
+          <rect x="16" y="158" width="268" height="14" rx="4" fill="#A16207" stroke="#4A2307" stroke-width="3"/>
+          <!-- cartel del mostrador -->
+          <rect x="86" y="180" width="128" height="44" rx="6" fill="#FFFDF7" stroke="#4A2307" stroke-width="2"/>
+          <text x="150" y="200" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="14" fill="#E63946" textLength="112" lengthAdjust="spacingAndGlyphs">ATENCIÓN GRATIS</text>
+          <text x="150" y="216" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="500" font-size="11" fill="#1E3A5F" textLength="112" lengthAdjust="spacingAndGlyphs">la doctora del cariño atiende</text>
+          <!-- tazas -->
+          <g transform="translate(40 136)">
+            <rect x="0" y="0" width="22" height="22" rx="4" fill="#fff" stroke="#1E3A5F" stroke-width="2"/>
+            <path d="M22 6 q8 0 8 6 q0 6-8 6" fill="none" stroke="#1E3A5F" stroke-width="2"/>
+            <path d="M6 -4 q3-6 0-10 M14 -4 q3-6 0-10" stroke="#94A3B8" stroke-width="2" fill="none"/>
+          </g>
+          <g transform="translate(232 136)">
+            <rect x="0" y="0" width="22" height="22" rx="4" fill="#FDE047" stroke="#1E3A5F" stroke-width="2"/>
+            <path d="M6 9 c0-3 5-3 5 0 c0-3 5-3 5 0 c0 3-5 6-5 7 c0-1-5-4-5-7z" fill="#E63946"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="panel-animo tarjeta-papel">
+        <h3>Medidor de Apapacho</h3>
+        <p>¿Cómo te sientes hoy? La doctora del cariño receta según tu estado de ánimo.</p>
+        <fieldset class="animos" id="animos">
+          <legend>Elige tu estado:</legend>
+        </fieldset>
+        <button class="boton rojo" id="btn-dosis" disabled>Recibir dosis</button>
+        <div class="dosis" id="dosis" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ GUARDIÁN MOCHI ============ -->
+<button class="guardian" id="guardian" aria-label="Mochi, la foquita guardiana. Tócala.">
+  <span class="sprite" data-sprite="foca" data-acc="bufanda" id="guardian-sprite"></span>
+</button>
+<div class="burbuja" id="burbuja" role="status"></div>
+
+<footer>
+  <svg class="olas" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 30 Q100 0 200 30 T400 30 T600 30 T800 30 T1000 30 T1200 30 V60 H0Z" fill="#fff"/>
+  </svg>
+  <p class="firma">Hecho con amor (y mucho código) por <span data-yo>Chris</span></p>
+  <p>Vuelve mañana: hay postal nueva en el buzón.</p>
+  <button class="reiniciar" id="reiniciar">Reiniciar progreso</button>
+</footer>
+
+<script>
+/* =================================================================
+   ✏️✏️✏️  ZONA DE PERSONALIZACIÓN  ✏️✏️✏️
+   Todo lo que está aquí arriba lo puedes cambiar sin miedo.
+   ================================================================= */
+const CONFIG = {
+  nombreElla: "Mi Amor",        // ✏️ Su nombre o apodo (aparece en toda la página)
+  nombreTuyo: "Chris",          // ✏️ Tu nombre (aparece en firmas y mensajes)
+  premioPizza: "Un abrazo gigante + tu comida favorita", // ✏️ Premio del minijuego
+  // ✏️ Música: deja "" para usar la música lo-fi generada por el navegador,
+  //    o pon la ruta de un mp3 que esté junto a este archivo, ej: "nuestra-cancion.mp3"
+  musicaURL: ""
+};
+
+/* ✏️ FRASES DIARIAS: una por día (se elige según la fecha del calendario).
+   Agrega, quita o reescribe las que quieras; puedes poner chistes internos. */
+const frasesDiarias = [
+  "Hoy el sol salió nomás para ver si ya te habías levantado. Spoiler: te ves preciosa.",
+  "Si fueras un copo de nieve serías el único que no se derrite, porque eres demasiado cool.",
+  "Recordatorio oficial: eres mi persona favorita del universo conocido (y del desconocido también).",
+  "Hay días buenos y días malos. Contigo hasta los malos tienen final feliz.",
+  "Tu risa debería venderse en frasquitos para los días nublados.",
+  "No sé qué hiciste hoy, pero estoy orgulloso de ti. Y si no hiciste nada, también: descansar es importante.",
+  "Me gustas más que el chocolate caliente en diciembre. Y eso es decir MUCHO.",
+  "Eres la clase de persona que hace que el mundo parezca un lugar más amable.",
+  "Si hoy te sientes pequeñita, acuérdate que en mi vida ocupas el espacio más grande.",
+  "Dato curioso: abrazarte reduce mi estrés en un 100%. Fuente: Chris, comprobado científicamente.",
+  "Tus ojos tienen más brillo que toda la nieve recién caída.",
+  "Hoy toca ser amable contigo misma. Órdenes del presidente de tu club de fans (o sea, Chris).",
+  "Contigo hasta hacer fila en el banco suena a plan.",
+  "Eres poesía, aunque te despiertes despeinada. Sobre todo despeinada.",
+  "Tienes permiso de comerte un postre hoy. Ya lo firmé yo.",
+  "Si el amor fuera una carrera, ya perdí: me rendí a ti desde el principio.",
+  "Eres fuerte, lista, hermosa y además tienes buen gusto (me elegiste a mí).",
+  "Que tu café esté calientito y tus problemas tibios y chiquitos.",
+  "Pienso en ti más veces al día de las que me gustaría admitir. Bueno, lo admito: siempre.",
+  "Cualquier lugar se vuelve casa si tú estás ahí.",
+  "Hoy vas a brillar. Y si no, igual yo te voy a ver brillar.",
+  "Me encantas en todas tus versiones: la feliz, la cansada, la hambrienta y la que dice 'no tengo hambre' y luego se come mis papas.",
+  "Eres mi lugar seguro y mi aventura favorita al mismo tiempo.",
+  "Respira hondo. Lo que hoy parece enorme, mañana lo vas a ver desde arriba.",
+  "Si alguna vez te pierdes, tranquila: yo sé exactamente dónde te guardo. Aquí, en el corazón.",
+  "Tu sonrisa es mi notificación favorita.",
+  "El universo tardó millones de años en acomodarse para que nos encontráramos. Qué buen trabajo hizo.",
+  "Hoy te mando un abrazo de esos que levantan del piso. Recógelo en persona.",
+  "Eres la respuesta correcta a todas mis preguntas tontas.",
+  "Gracias por existir. En serio. El mundo es mejor con tu risa dando vueltas por ahí.",
+  "Ni el invierno más frío le gana a lo calientito que se siente estar contigo."
+];
+
+/* ✏️ DOSIS EXTRA NO AUTORIZADA: frases al azar del botón de la galleta */
+const frasesExtra = [
+  "Dosis extra: alguien por aquí (Chris) cree que eres increíble. Efecto secundario: sonrisa involuntaria.",
+  "Alerta: niveles peligrosamente bajos de mimos. Aplicando 1,000 besos de emergencia.",
+  "Receta: 2 abrazos, 1 siesta y ver algo bonito con Chris. Repetir si persisten los síntomas.",
+  "Tú puedes con esto. Y si no puedes, Chris te carga. Literal, tiene brazos.",
+  "Recordatorio no autorizado: tu valor no depende de lo productiva que fuiste hoy.",
+  "Esta galleta virtual tiene 0 calorías y 100% de amor. Cómetela sin culpa.",
+  "Si alguien te hizo enojar hoy, dame su nombre. Le voy a mandar una mirada muy fea.",
+  "Pausa obligatoria: estira los brazos, toma agüita y piensa en lo bonita que eres.",
+  "Te quiero un montón. Más que ayer y menos que mañana (es cursi, pero es verdad).",
+  "El día pesado se va a acabar. Yo no: yo me quedo.",
+  "Hackeaste el sistema: aquí va un beso en la frente gratis.",
+  "Ojalá pudiera meterme por la pantalla para darte un apapacho. Por mientras, imagínalo bien fuerte."
+];
+
+/* ✏️ RAZONES: el texto que aparece al desbloquear cada tarjeta (en orden 1-4) */
+const razones = [
+  "Porque tu risa es mi sonido favorito… incluso cuando te ríes de mí (que es seguido).",
+  "Porque cuidas a todos los que quieres, y yo tengo la suerte de estar en esa lista.",
+  "Porque contigo todo es más bonito, te extraño como no te imaginas.",
+  "Pongamos la música que pongamos, mi parte favorita del viaje siempre vas a ser tú: tu risa entre canción y canción, tu voz cantando aunque no te sepas la letra y saber que cualquier camino es bonito si vas a mi lado. Contigo no importa a dónde vayamos, ya llegué."
+];
+
+/* ✏️ TEST DE COMPATIBILIDAD: todas las respuestas son correctas 😏 */
+const testCompatibilidad = {
+  pregunta: "¿A la próxima qué tipo de música vamos a poner en tu carro?",
+  opciones: [
+    { texto: "Puro perreo intenso", resultado: "Perreo intenso aprobado. Diagnóstico: 100% compatibles." },
+    { texto: "De la que a mí me gusta", resultado: "Tu playlist manda, siempre. Diagnóstico: 100% compatibles." },
+    { texto: "Las que te quiero dedicar (las canciones, va)", resultado: "Dedicatorias aceptadas. Diagnóstico: 100% compatibles." }
+  ]
+};
+
+/* ✏️ FRASES DE MOCHI (la foquita guardiana de la esquina) */
+const frasesMochi = [
+  "¡Hola! Soy Mochi, guardiana oficial de este iglú.",
+  "¿Ya tomaste agüita hoy?",
+  "Psst… Chris te quiere muchísimo. No le digas que te dije.",
+  "¡Accesorio nuevo! ¿Cómo me veo?",
+  "Dame un pescadito y te cuento un secreto.",
+  "¡Boing!",
+  "Eres mi humana favorita.",
+  "Aquí adentro todo es calientito. Quédate un ratito."
+];
+
+/* ✏️ CABINA DE APAPACHOS: mensajes por estado de ánimo */
+const apapachos = {
+  cansada: {
+    etiqueta: "Cansada",
+    mensajes: [
+      "Hoy diste todo, y eso ya es muchísimo. Ahora te toca recargar baterías.",
+      "Hasta los copos de nieve descansan en el suelo después de caer. Tú también puedes.",
+      "Ojalá estar ahí para taparte con una cobijita y prepararte algo calientito."
+    ],
+    receta: "1 siesta sin culpa + 1 cobija extra + mensajitos de Chris cada que despiertes."
+  },
+  feliz: {
+    etiqueta: "Feliz",
+    mensajes: [
+      "¡Así me gusta verte! Tu felicidad es contagiosa, ya me la pegaste.",
+      "Guarda este momento en un frasquito para los días grises.",
+      "Cuando tú estás feliz, hasta la nieve brilla más. Es ciencia."
+    ],
+    receta: "Seguir sonriendo así cada 5 minutos. Compartir la felicidad con Chris (obligatorio)."
+  },
+  abrazo: {
+    etiqueta: "Necesito un abrazo",
+    mensajes: [
+      "Abrazo enviado. Es de los apretados, de los que duran más de 20 segundos.",
+      "Cierra los ojos tres segundos… ese calorcito que sentiste fui yo abrazándote.",
+      "Te debo un abrazo en persona y prometo pagarlo con intereses."
+    ],
+    receta: "Abrazo de oso ilimitado. Canjeable en persona, sin fecha de vencimiento."
+  },
+  antojitos: {
+    etiqueta: "Tengo antojitos",
+    mensajes: [
+      "El antojo es la forma que tiene el universo de decirte 'date un gustito'. Hazle caso.",
+      "Dime qué se te antoja y lo anoto en la lista de 'cosas que te voy a llevar'.",
+      "Opinión médica: los antojos compartidos tienen la mitad de calorías. Te acompaño."
+    ],
+    receta: "1 antojito de tu elección + compartirle una mordida a Chris (opcional, pero apreciado)."
+  },
+  flojera: {
+    etiqueta: "Con flojera",
+    mensajes: [
+      "La flojera también es válida. Hoy eres oficialmente una papa de sillón certificada.",
+      "Los osos hibernan meses y nadie les dice nada. Tú tienes derecho a una tarde.",
+      "Propongo un plan: no hacer nada, juntos. Mi plan favorito, sinceramente."
+    ],
+    receta: "Pijama + serie + cero pendientes por las próximas 2 horas."
+  }
+};
+/* ================= FIN DE LA ZONA DE PERSONALIZACIÓN ================= */
+
+
+/* =================================================================
+   1. UTILIDADES
+   ================================================================= */
+const $ = (s, c = document) => c.querySelector(s);
+const $$ = (s, c = document) => [...c.querySelectorAll(s)];
+const azar = (min, max) => Math.random() * (max - min) + min;
+const elegir = arr => arr[Math.floor(Math.random() * arr.length)];
+const movimientoReducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// localStorage protegido (en modo privado puede fallar y la página sigue funcionando)
+const guardado = {
+  leer(clave, defecto) {
+    try { const v = localStorage.getItem("iglu_" + clave); return v === null ? defecto : JSON.parse(v); }
+    catch (e) { return defecto; }
+  },
+  escribir(clave, valor) {
+    try { localStorage.setItem("iglu_" + clave, JSON.stringify(valor)); } catch (e) { /* sin almacenamiento */ }
+  },
+  borrarTodo() {
+    try { Object.keys(localStorage).filter(k => k.startsWith("iglu_")).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  }
+};
+function claveHoy(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+
+/* =================================================================
+   2. SPRITES SVG (personajes originales)
+   ================================================================= */
+function focaSVG() {
+  return `
+<svg viewBox="0 0 120 120" aria-hidden="true">
+  <ellipse cx="60" cy="113" rx="34" ry="5" fill="#0C4A6E" opacity=".12"/>
+  <path d="M20 78 C20 40 40 22 60 22 C80 22 100 40 100 78 C100 102 84 110 60 110 C36 110 20 102 20 78Z" fill="#F8FAFC" stroke="#94A3B8" stroke-width="3"/>
+  <ellipse cx="26" cy="96" rx="11" ry="6" transform="rotate(-30 26 96)" fill="#E2E8F0" stroke="#94A3B8" stroke-width="3"/>
+  <ellipse cx="94" cy="96" rx="11" ry="6" transform="rotate(30 94 96)" fill="#E2E8F0" stroke="#94A3B8" stroke-width="3"/>
+  <g class="ojo-izq"><g class="pupila"><circle cx="46" cy="58" r="7" fill="#1E293B"/><circle cx="48.5" cy="55.5" r="2.4" fill="#fff"/></g></g>
+  <g class="ojo-der"><g class="pupila"><circle cx="74" cy="58" r="7" fill="#1E293B"/><circle cx="76.5" cy="55.5" r="2.4" fill="#fff"/></g></g>
+  <ellipse cx="35" cy="72" rx="6" ry="3.5" fill="#FDA4AF" opacity=".85"/>
+  <ellipse cx="85" cy="72" rx="6" ry="3.5" fill="#FDA4AF" opacity=".85"/>
+  <ellipse cx="54" cy="73" rx="7" ry="5.5" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+  <ellipse cx="66" cy="73" rx="7" ry="5.5" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+  <ellipse cx="60" cy="68" rx="4.5" ry="3" fill="#334155"/>
+  <path class="boca" d="M56 80 Q60 84 64 80" stroke="#334155" stroke-width="2.2" fill="none" stroke-linecap="round" style="transform-box:fill-box;transform-origin:center"/>
+  <g stroke="#94A3B8" stroke-width="1.4" stroke-linecap="round">
+    <line x1="44" y1="72" x2="32" y2="69"/><line x1="44" y1="76" x2="32" y2="78"/>
+    <line x1="76" y1="72" x2="88" y2="69"/><line x1="76" y1="76" x2="88" y2="78"/>
+  </g>
+  <g class="acc acc-bufanda" fill="var(--acc-color,#E63946)">
+    <path d="M27 88 Q60 101 93 88 L94 96 Q60 110 26 96Z"/>
+    <rect x="70" y="96" width="10" height="17" rx="3"/>
+    <path d="M32 92 L36 98 M44 95 L47 101 M58 97 L60 103" stroke="#fff" stroke-width="2" opacity=".6"/>
+  </g>
+  <g class="acc acc-gorro">
+    <path d="M32 34 Q60 2 88 34 Q60 26 32 34Z" fill="var(--acc-color,#E63946)"/>
+    <rect x="30" y="30" width="60" height="9" rx="4.5" fill="#fff"/>
+    <circle cx="60" cy="8" r="7" fill="#fff"/>
+  </g>
+  <g class="acc acc-moño" fill="var(--acc-color,#E63946)">
+    <path d="M78 30 L64 22 L66 40Z"/><path d="M78 30 L92 22 L90 40Z"/>
+    <circle cx="78" cy="31" r="4.5"/>
+  </g>
+  <g class="acc acc-orejeras">
+    <path d="M24 58 Q24 14 60 14 Q96 14 96 58" fill="none" stroke="#64748B" stroke-width="4"/>
+    <circle cx="23" cy="58" r="10" fill="var(--acc-color,#E63946)"/>
+    <circle cx="97" cy="58" r="10" fill="var(--acc-color,#E63946)"/>
+  </g>
+</svg>`;
+}
+
+function yopisSVG() {
+  return `
+<svg viewBox="0 0 120 120" aria-hidden="true">
+  <ellipse cx="60" cy="113" rx="34" ry="5" fill="#0C4A6E" opacity=".12"/>
+  <path d="M20 78 C20 40 40 22 60 22 C80 22 100 40 100 78 C100 102 84 110 60 110 C36 110 20 102 20 78Z" fill="#CBD5E1" stroke="#64748B" stroke-width="3"/>
+  <g fill="#94A3B8" opacity=".6">
+    <ellipse cx="37" cy="42" rx="5" ry="3.5"/><ellipse cx="85" cy="45" rx="4" ry="3"/>
+    <ellipse cx="29" cy="82" rx="3.5" ry="2.5"/><ellipse cx="90" cy="80" rx="4.5" ry="3"/>
+  </g>
+  <path d="M53 25 Q56 12 61 22 Q65 13 68 25" fill="none" stroke="#64748B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="26" cy="96" rx="11" ry="6" transform="rotate(-30 26 96)" fill="#B8C4D4" stroke="#64748B" stroke-width="3"/>
+  <ellipse cx="94" cy="96" rx="11" ry="6" transform="rotate(30 94 96)" fill="#B8C4D4" stroke="#64748B" stroke-width="3"/>
+  <g class="ojos-normal">
+    <circle cx="46" cy="58" r="7" fill="#1E293B"/><circle cx="48.5" cy="55.5" r="2.4" fill="#fff"/>
+    <circle cx="74" cy="58" r="7" fill="#1E293B"/><circle cx="76.5" cy="55.5" r="2.4" fill="#fff"/>
+  </g>
+  <g class="ojos-risa" stroke="#1E293B" stroke-width="3.2" fill="none" stroke-linecap="round">
+    <path d="M39 60 Q46 51 53 60"/><path d="M67 60 Q74 51 81 60"/>
+  </g>
+  <ellipse cx="35" cy="72" rx="6" ry="3.5" fill="#FDA4AF" opacity=".85"/>
+  <ellipse cx="85" cy="72" rx="6" ry="3.5" fill="#FDA4AF" opacity=".85"/>
+  <ellipse cx="54" cy="73" rx="7" ry="5.5" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.5"/>
+  <ellipse cx="66" cy="73" rx="7" ry="5.5" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.5"/>
+  <ellipse cx="60" cy="68" rx="4.5" ry="3" fill="#334155"/>
+  <path class="boca-normal" d="M56 80 Q60 84 64 80" stroke="#334155" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path class="boca-risa" d="M54 79 Q60 91 66 79Z" fill="#7F1D1D" stroke="#334155" stroke-width="2" stroke-linejoin="round"/>
+  <g stroke="#64748B" stroke-width="1.4" stroke-linecap="round">
+    <line x1="44" y1="72" x2="32" y2="69"/><line x1="44" y1="76" x2="32" y2="78"/>
+    <line x1="76" y1="72" x2="88" y2="69"/><line x1="76" y1="76" x2="88" y2="78"/>
+  </g>
+  <g fill="#3B82F6">
+    <path d="M27 88 Q60 101 93 88 L94 96 Q60 110 26 96Z"/>
+    <rect x="40" y="96" width="10" height="17" rx="3"/>
+    <path d="M32 92 L36 98 M44 95 L47 101 M58 97 L60 103" stroke="#fff" stroke-width="2" opacity=".6"/>
+  </g>
+</svg>`;
+}
+
+/* Iconos dibujados en SVG (reemplazan a los emojis) */
+const RUTA_CORAZON = "M12 20.5C12 20.5 3 15 3 8.8 3 6 5.1 4 7.6 4c1.8 0 3.4 1 4.4 2.5C13 5 14.6 4 16.4 4 18.9 4 21 6 21 8.8 21 15 12 20.5 12 20.5z";
+const ICONOS = {
+  corazon: `<svg viewBox="0 0 24 24"><path d="${RUTA_CORAZON}" fill="#E63946" stroke="#7F1D1D" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
+  corazonVacio: `<svg viewBox="0 0 24 24"><path d="${RUTA_CORAZON}" fill="rgba(255,255,255,.25)" stroke="#FFFDF7" stroke-width="1.6" stroke-linejoin="round"/></svg>`,
+  queso: `<svg viewBox="0 0 24 24"><path d="M2 17.5 L21.5 8 L21.5 18.5 L2 18.5Z" fill="#FACC15" stroke="#A16207" stroke-width="1.4" stroke-linejoin="round"/><circle cx="16" cy="14.5" r="1.7" fill="#CA8A04"/><circle cx="19.3" cy="11.6" r="1" fill="#CA8A04"/><circle cx="10.5" cy="16.6" r="1.1" fill="#CA8A04"/></svg>`,
+  galleta: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#D9A15B" stroke="#78350F" stroke-width="1.4"/><g fill="#4A2307"><circle cx="8.5" cy="9" r="1.4"/><circle cx="14.5" cy="7.5" r="1.1"/><circle cx="15.5" cy="13.5" r="1.5"/><circle cx="9.5" cy="15" r="1.2"/><circle cx="12" cy="11.5" r=".9"/></g></svg>`,
+  fresa: `<svg viewBox="0 0 24 24"><path d="M12 22C7 19 3.8 13.8 4.8 9.4 5.4 7 8 6.4 12 6.4s6.6.6 7.2 3c1 4.4-2.2 9.6-7.2 12.6z" fill="#E63946" stroke="#9F1239" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 7.5 L9.5 4.5 L12 6 L14.5 4.5 L17.5 7.5 L12 9.2Z" fill="#22C55E" stroke="#15803D" stroke-width="1" stroke-linejoin="round"/><g fill="#FDE68A"><ellipse cx="9" cy="12" rx=".6" ry=".9"/><ellipse cx="14.5" cy="11.5" rx=".6" ry=".9"/><ellipse cx="12" cy="15" rx=".6" ry=".9"/><ellipse cx="9.8" cy="17" rx=".6" ry=".9"/><ellipse cx="14.6" cy="16.4" rx=".6" ry=".9"/></g></svg>`,
+  pizza: `<svg viewBox="0 0 24 24"><path d="M12 22.5 L2.8 6.2 Q12 1 21.2 6.2Z" fill="#FCD34D" stroke="#B45309" stroke-width="1.3" stroke-linejoin="round"/><path d="M2.8 6.2 Q12 1 21.2 6.2" fill="none" stroke="#D97706" stroke-width="2.6" stroke-linecap="round"/><g fill="#E63946"><circle cx="10" cy="9.5" r="1.8"/><circle cx="14.6" cy="11" r="1.6"/><circle cx="12" cy="15.5" r="1.4"/></g></svg>`,
+  pez: `<svg viewBox="0 0 24 24"><path d="M16.5 12 L23 6.8 L23 17.2Z" fill="#60A5FA" stroke="#1D4ED8" stroke-width="1.3" stroke-linejoin="round"/><ellipse cx="10" cy="12" rx="8" ry="5" fill="#93C5FD" stroke="#1D4ED8" stroke-width="1.3"/><circle cx="6" cy="11" r="1.1" fill="#1E293B"/><path d="M11 9 Q12.5 12 11 15" fill="none" stroke="#1D4ED8" stroke-width="1"/></svg>`,
+  candado: `<svg viewBox="0 0 24 24"><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="#475569" stroke-width="2.4"/><rect x="5" y="10.5" width="14" height="10.5" rx="2.2" fill="#FACC15" stroke="#854D0E" stroke-width="1.4"/><circle cx="12" cy="15.2" r="1.5" fill="#854D0E"/><rect x="11.3" y="15.5" width="1.4" height="3" rx=".6" fill="#854D0E"/></svg>`,
+  copo: `<svg viewBox="0 0 24 24"><g stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M12 2.5v19M3.8 7.2l16.4 9.6M3.8 16.8l16.4-9.6"/><path d="M9.6 4.2 12 6.4l2.4-2.2M9.6 19.8 12 17.6l2.4 2.2M4.1 10.4l3.1-.9-.7-3.1M19.9 13.6l-3.1.9.7 3.1M4.1 13.6l3.1.9-.7 3.1M19.9 10.4l-3.1-.9.7-3.1"/></g></svg>`,
+  huella: `<svg viewBox="0 0 24 24"><g fill="currentColor"><ellipse cx="12" cy="16" rx="5.2" ry="4.4"/><circle cx="5.8" cy="10.2" r="2.1"/><circle cx="9.6" cy="6.6" r="2.1"/><circle cx="14.4" cy="6.6" r="2.1"/><circle cx="18.2" cy="10.2" r="2.1"/></g></svg>`
+};
+const icono = nombre => ICONOS[nombre] || "";
+function pintarIconos(contexto = document) {
+  $$("[data-icono]", contexto).forEach(el => el.innerHTML = icono(el.dataset.icono));
+}
+function particulaSVG() {
+  if (Math.random() < .3) return `<svg viewBox="0 0 24 24" style="color:${elegir(["#7DD3FC", "#94A3B8", "#A16207"])}">${ICONOS.huella.slice(ICONOS.huella.indexOf(">") + 1)}`;
+  return `<svg viewBox="0 0 24 24"><path d="${RUTA_CORAZON}" fill="${elegir(["#E63946", "#F472B6", "#FB7185", "#FDA4AF", "#FACC15"])}"/></svg>`;
+}
+
+function pintarSprites(contexto = document) {
+  $$("[data-sprite]", contexto).forEach(el => {
+    el.innerHTML = el.dataset.sprite === "foca" ? focaSVG() : yopisSVG();
+  });
+}
+
+
+/* =================================================================
+   3. AUDIO: efectos + música lo-fi generada (sin archivos externos)
+   ================================================================= */
+let audioCtx = null;
+function ctx() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function tono(freq, inicio, dur, tipo = "sine", vol = 0.12, destino) {
+  const c = ctx(); if (!c) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = tipo; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, inicio);
+  g.gain.linearRampToValueAtTime(vol, inicio + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, inicio + dur);
+  o.connect(g).connect(destino || c.destination);
+  o.start(inicio); o.stop(inicio + dur + 0.05);
+}
+const sfx = {
+  pop()   { const c = ctx(); if (!c) return; tono(660, c.currentTime, .12, "sine", .1); tono(990, c.currentTime + .05, .1, "sine", .07); },
+  campana(){ const c = ctx(); if (!c) return; [880, 1175, 1568, 1760].forEach((f, i) => tono(f, c.currentTime + i * .12, .9, "sine", .08)); },
+  exito() { const c = ctx(); if (!c) return; [523, 659, 784, 1047].forEach((f, i) => tono(f, c.currentTime + i * .09, .35, "triangle", .1)); },
+  fallo() { const c = ctx(); if (!c) return; tono(330, c.currentTime, .2, "triangle", .1); tono(220, c.currentTime + .15, .35, "triangle", .1); },
+  risa()  { const c = ctx(); if (!c) return; for (let i = 0; i < 6; i++) tono(i % 2 ? 760 : 920, c.currentTime + i * .09, .08, "square", .035); },
+  ñam()   { const c = ctx(); if (!c) return; for (let i = 0; i < 3; i++) tono(240 + i * 40, c.currentTime + i * .13, .08, "square", .04); }
+};
+
+const Musica = (() => {
+  let sonando = false, timer = null, paso = 0, siguiente = 0;
+  let maestro = null, filtro = null, audioEl = null, ruido = null;
+  let volumen = 0.45;
+  const BPM = 70, corchea = 60 / BPM / 2;
+  // Progresión jazz suave: Fmaj7 – Em7 – Dm7 – Cmaj7 (notas MIDI)
+  const acordes = [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]];
+  const bajos = [41, 40, 38, 36];
+  const escala = [64, 67, 69, 72, 74, 76, 79];
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+
+  function preparar() {
+    const c = ctx(); if (!c) return false;
+    if (maestro) return true;
+    maestro = c.createGain(); maestro.gain.value = volumen * 0.9;
+    filtro = c.createBiquadFilter(); filtro.type = "lowpass"; filtro.frequency.value = 2400;
+    filtro.connect(maestro).connect(c.destination);
+    // ruido para los platillos suaves
+    const len = c.sampleRate * 0.2;
+    ruido = c.createBuffer(1, len, c.sampleRate);
+    const d = ruido.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return true;
+  }
+  function platillo(t) {
+    const c = ctx(), s = c.createBufferSource(), hp = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = ruido; hp.type = "highpass"; hp.frequency.value = 7000;
+    g.gain.setValueAtTime(0.025, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    s.connect(hp).connect(g).connect(filtro); s.start(t); s.stop(t + 0.08);
+  }
+  function programar() {
+    const c = ctx();
+    while (siguiente < c.currentTime + 0.25) {
+      const compas = Math.floor(paso / 8) % acordes.length, enCompas = paso % 8;
+      const swing = enCompas % 2 ? corchea * 0.18 : 0, t = siguiente + swing;
+      if (enCompas === 0) {
+        acordes[compas].forEach((n, i) => {
+          tono(mtof(n), t + i * 0.025, corchea * 7.5, "sine", 0.05, filtro);
+          tono(mtof(n + 12), t + i * 0.025, corchea * 3, "triangle", 0.012, filtro);
+        });
+      }
+      if (enCompas === 0 || enCompas === 4) tono(mtof(bajos[compas] - 12 + (enCompas === 4 ? 7 : 0)), t, corchea * 3.5, "sine", 0.11, filtro);
+      if (enCompas % 2 === 1) platillo(t);
+      if (Math.random() < 0.3 && enCompas !== 7) tono(mtof(elegir(escala)), t, corchea * 2.2, "sine", 0.045, filtro);
+      siguiente += corchea; paso++;
+    }
+  }
+  function play() {
+    if (CONFIG.musicaURL) {
+      if (!audioEl) { audioEl = new Audio(CONFIG.musicaURL); audioEl.loop = true; }
+      audioEl.volume = volumen;
+      audioEl.play().catch(() => {});
+    } else {
+      if (!preparar()) return;
+      maestro.gain.setTargetAtTime(volumen * 0.9, ctx().currentTime, 0.3);
+      siguiente = ctx().currentTime + 0.1;
+      timer = setInterval(programar, 90);
+    }
+    sonando = true;
+  }
+  function pausa() {
+    if (audioEl) audioEl.pause();
+    if (timer) { clearInterval(timer); timer = null; }
+    if (maestro) maestro.gain.setTargetAtTime(0.0001, ctx().currentTime, 0.2);
+    sonando = false;
+  }
+  function setVolumen(v) {
+    volumen = v;
+    if (audioEl) audioEl.volume = v;
+    if (maestro && sonando) maestro.gain.setTargetAtTime(v * 0.9, ctx().currentTime, 0.1);
+  }
+  return { play, pausa, setVolumen, get sonando() { return sonando; } };
+})();
+
+function iniciarRadio() {
+  const btn = $("#radio-play"), vol = $("#radio-vol"), radio = $("#radio");
+  btn.addEventListener("click", () => {
+    if (Musica.sonando) { Musica.pausa(); btn.textContent = "▶"; btn.setAttribute("aria-label", "Reproducir música"); radio.classList.remove("sonando"); }
+    else { Musica.play(); btn.textContent = "❚❚"; btn.setAttribute("aria-label", "Pausar música"); radio.classList.add("sonando"); }
+  });
+  vol.addEventListener("input", () => Musica.setVolumen(vol.value / 100));
+}
+
+
+/* =================================================================
+   4. NIEVE DE FONDO (canvas)
+   ================================================================= */
+function iniciarNieve() {
+  const cv = $("#nieve"), c = cv.getContext("2d");
+  let copos = [], w = 0, h = 0;
+  function medir() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = innerWidth; h = innerHeight;
+    cv.width = w * dpr; cv.height = h * dpr; c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cantidad = Math.round(Math.min(140, (w * h) / (movimientoReducido ? 30000 : 11000)));
+    copos = Array.from({ length: cantidad }, () => nuevo(true));
+  }
+  function nuevo(inicio) {
+    return { x: azar(0, w), y: inicio ? azar(0, h) : -10, r: azar(1.2, 3.6), v: azar(.25, .9), fase: azar(0, Math.PI * 2), a: azar(.5, .95) };
+  }
+  function dibujar() {
+    c.clearRect(0, 0, w, h);
+    for (const p of copos) {
+      p.y += p.v * (movimientoReducido ? .4 : 1);
+      p.fase += 0.01;
+      p.x += Math.sin(p.fase) * 0.35;
+      if (p.y > h + 10) Object.assign(p, nuevo(false));
+      c.beginPath(); c.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      c.fillStyle = `rgba(255,255,255,${p.a})`; c.fill();
+    }
+    requestAnimationFrame(dibujar);
+  }
+  addEventListener("resize", medir);
+  medir(); dibujar();
+}
+
+
+/* =================================================================
+   5. CORAZONCITOS Y HUELLITAS AL HACER CLIC
+   ================================================================= */
+function iniciarParticulasClic() {
+  document.addEventListener("pointerdown", e => {
+    const n = movimientoReducido ? 1 : 4;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement("span");
+      s.className = "particula";
+      s.innerHTML = particulaSVG();
+      s.style.left = e.clientX + "px"; s.style.top = e.clientY + "px";
+      s.style.setProperty("--dx", azar(-40, 40) + "px");
+      s.style.setProperty("--rot", azar(-40, 40) + "deg");
+      s.style.width = s.style.height = azar(14, 22) + "px";
+      s.style.animationDelay = i * 0.04 + "s";
+      s.addEventListener("animationend", () => s.remove());
+      document.body.appendChild(s);
+    }
+  }, { passive: true });
+}
+function lluviaEmojis(cantidad = 36) {
+  for (let i = 0; i < cantidad; i++) {
+    const s = document.createElement("span");
+    s.className = "particula";
+    s.innerHTML = particulaSVG();
+    s.style.left = azar(5, 95) + "vw"; s.style.top = azar(40, 90) + "vh";
+    s.style.setProperty("--dx", azar(-60, 60) + "px");
+    s.style.setProperty("--rot", azar(-90, 90) + "deg");
+    s.style.width = s.style.height = azar(18, 32) + "px";
+    s.style.animationDuration = azar(1.2, 2.2) + "s";
+    s.style.animationDelay = azar(0, .6) + "s";
+    s.addEventListener("animationend", () => s.remove());
+    document.body.appendChild(s);
+  }
+}
+function confetiFiesta() {
+  if (typeof window.confetti !== "function") { lluviaEmojis(); return; }
+  const colores = ["#E63946", "#FDE047", "#BAE6FD", "#FFFFFF", "#F9A8D4"];
+  const fin = Date.now() + 1600;
+  (function rafaga() {
+    confetti({ particleCount: 5, angle: 60, spread: 60, origin: { x: 0, y: .7 }, colors: colores });
+    confetti({ particleCount: 5, angle: 120, spread: 60, origin: { x: 1, y: .7 }, colors: colores });
+    if (Date.now() < fin) requestAnimationFrame(rafaga);
+  })();
+  confetti({ particleCount: 120, spread: 90, origin: { y: .6 }, colors: colores, shapes: ["circle", "square"] });
+}
+
+
+/* =================================================================
+   6. MONEDAS DE CARIÑO (contador de la barra)
+   ================================================================= */
+const Monedas = {
+  total: 0,
+  init() { this.total = guardado.leer("monedas", 0); this.pintar(); },
+  sumar(n) {
+    this.total += n; guardado.escribir("monedas", this.total); this.pintar();
+    const m = $("#monedas"); m.classList.remove("salto"); void m.offsetWidth; m.classList.add("salto");
+  },
+  pintar() { $("#monedas-num").textContent = this.total; }
+};
+
+
+/* =================================================================
+   7. MOCHI, LA FOQUITA GUARDIANA
+   ================================================================= */
+function iniciarGuardian() {
+  const btn = $("#guardian"), sprite = $("#guardian-sprite"), burbuja = $("#burbuja");
+  const accesorios = ["bufanda", "gorro", "moño", "orejeras"];
+  const colores = ["#E63946", "#3B82F6", "#FACC15", "#EC4899", "#22C55E"];
+  let iAcc = 0, iCol = 0, timerBurbuja = null, primeraVez = true;
+
+  btn.addEventListener("click", () => {
+    iAcc = (iAcc + 1) % accesorios.length;
+    iCol = (iCol + 1) % colores.length;
+    sprite.dataset.acc = accesorios[iAcc];
+    sprite.style.setProperty("--acc-color", colores[iCol]);
+    btn.classList.remove("salto", "guino"); void btn.offsetWidth;
+    btn.classList.add("salto", "guino");
+    setTimeout(() => btn.classList.remove("guino"), 450);
+    sfx.pop();
+    burbuja.textContent = primeraVez ? frasesMochi[0] : elegir(frasesMochi.slice(1));
+    primeraVez = false;
+    burbuja.classList.add("ver");
+    clearTimeout(timerBurbuja);
+    timerBurbuja = setTimeout(() => burbuja.classList.remove("ver"), 2800);
+    Monedas.sumar(1);
+  });
+
+  // Los ojitos siguen al cursor
+  let pendiente = false, px = 0, py = 0;
+  document.addEventListener("pointermove", e => {
+    px = e.clientX; py = e.clientY;
+    if (pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(() => {
+      pendiente = false;
+      const r = btn.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const ang = Math.atan2(py - cy, px - cx);
+      const dist = Math.min(1, Math.hypot(px - cx, py - cy) / 200);
+      const dx = Math.cos(ang) * 2.6 * dist, dy = Math.sin(ang) * 2.6 * dist;
+      $$(".pupila", sprite).forEach(p => p.setAttribute("transform", `translate(${dx.toFixed(2)} ${dy.toFixed(2)})`));
+    });
+  }, { passive: true });
+}
+
+
+/* =================================================================
+   8. BUZÓN DIARIO
+   ================================================================= */
+function iniciarBuzon() {
+  const btn = $("#buzon-btn"), postal = $("#postal"), espera = $("#postal-espera"), nota = $("#postal-nota");
+  const hoy = new Date();
+  const diaDelAño = Math.floor((hoy - new Date(hoy.getFullYear(), 0, 0)) / 86400000);
+  const fraseHoy = frasesDiarias[diaDelAño % frasesDiarias.length];
+  const clave = "buzon_" + claveHoy(hoy);
+
+  $("#postal-fecha").textContent = hoy.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  $("#postal-frase").textContent = fraseHoy;
+
+  function mostrarPostal(animar) {
+    espera.style.display = "none";
+    postal.classList.remove("oculta", "desplegar");
+    if (animar) { void postal.offsetWidth; postal.classList.add("desplegar"); }
+    nota.textContent = "Ya abriste la postal de hoy. Mañana llega otra.";
+  }
+
+  // Si ya la abrió hoy: bandera abajo y postal visible
+  if (guardado.leer(clave, false)) { btn.classList.add("leido"); mostrarPostal(false); }
+
+  btn.addEventListener("click", () => {
+    const primera = !btn.classList.contains("leido");
+    btn.classList.add("abriendo");
+    sfx.campana();
+    setTimeout(() => {
+      btn.classList.remove("abriendo");
+      btn.classList.add("leido");
+      mostrarPostal(true);
+      if (primera) { guardado.escribir(clave, true); Monedas.sumar(2); }
+    }, 650);
+  });
+
+  // Botón trampa: dosis extra no autorizada
+  const extra = $("#extra-frase");
+  let ultima = -1;
+  $("#btn-extra").addEventListener("click", () => {
+    let i; do { i = Math.floor(Math.random() * frasesExtra.length); } while (i === ultima && frasesExtra.length > 1);
+    ultima = i;
+    extra.textContent = frasesExtra[i];
+    extra.classList.remove("ver"); void extra.offsetWidth; extra.classList.add("ver");
+    sfx.pop();
+    Monedas.sumar(1);
+  });
+}
+
+
+/* =================================================================
+   9. TARJETAS DESBLOQUEABLES
+   ================================================================= */
+const Tarjetas = (() => {
+  let desbloqueadas = new Set(guardado.leer("tarjetas", []));
+
+  function pintarRazones() {
+    $$("[data-razon]").forEach(p => p.textContent = razones[+p.dataset.razon] || "");
+    // signos de interrogación decorativos
+    $$(".tarjeta").forEach(t => {
+      const capa = document.createElement("div"); capa.className = "signos"; capa.setAttribute("aria-hidden", "true");
+      for (let i = 0; i < 5; i++) {
+        const s = document.createElement("span"); s.textContent = "?";
+        s.style.left = azar(0, 90) + "%"; s.style.top = azar(0, 85) + "%"; s.style.transform = `rotate(${azar(-30, 30)}deg)`;
+        capa.appendChild(s);
+      }
+      t.prepend(capa);
+    });
+  }
+  function desbloquear(n, silencioso = false) {
+    const t = $(`.tarjeta[data-tarjeta="${n}"]`);
+    if (!t || t.classList.contains("desbloqueada")) return;
+    t.classList.add("desbloqueada");
+    $(".signos", t)?.remove();
+    if (silencioso) return;
+    desbloqueadas.add(n);
+    guardado.escribir("tarjetas", [...desbloqueadas]);
+    sfx.exito();
+    Monedas.sumar(3);
+    if (desbloqueadas.size === 4) setTimeout(() => { confetiFiesta(); $("#final-tarjetas").classList.add("ver"); }, 500);
+  }
+
+  // --- Tarjeta 1: cosquillas (3 toques rápidos) ---
+  function t1() {
+    const yopis = $("#yopis-btn"), puntos = $$("#cosquillas-puntos i");
+    let toques = [], riendo = false, reinicio;
+    yopis.addEventListener("click", e => {
+      if (riendo) return;
+      const ahora = performance.now();
+      toques = toques.filter(t => ahora - t < 1100); toques.push(ahora);
+      puntos.forEach((p, i) => p.classList.toggle("on", i < toques.length));
+      yopis.classList.remove("cosquilla"); void yopis.offsetWidth; yopis.classList.add("cosquilla");
+      sfx.pop();
+      clearTimeout(reinicio);
+      reinicio = setTimeout(() => { if (!riendo) { toques = []; puntos.forEach(p => p.classList.remove("on")); } }, 1100);
+      if (toques.length >= 3) {
+        riendo = true;
+        yopis.classList.add("riendo");
+        sfx.risa();
+        const zona = yopis.parentElement;
+        ["¡Jajaja!", "¡jiji!", "¡Ya, ya!"].forEach((txt, i) => {
+          const j = document.createElement("span"); j.className = "jaja"; j.textContent = txt;
+          j.style.left = 20 + i * 28 + "%"; j.style.top = 30 + (i % 2) * 10 + "%"; j.style.animationDelay = i * .15 + "s";
+          j.addEventListener("animationend", () => j.remove());
+          zona.appendChild(j);
+        });
+        setTimeout(() => desbloquear(1), 1300);
+      }
+    });
+  }
+
+  // --- Tarjeta 2: alimentar a Mochi (arrastrar o tocar) ---
+  function t2() {
+    const foca = $("#foca-comedor");
+    let comida = false;
+    $$(".comida").forEach(el => {
+      let inicioX = 0, inicioY = 0, arrastrando = false, movido = false;
+      el.addEventListener("pointerdown", e => {
+        if (comida) return;
+        e.preventDefault();
+        el.setPointerCapture(e.pointerId);
+        inicioX = e.clientX; inicioY = e.clientY; arrastrando = true; movido = false;
+        el.classList.remove("volando"); el.classList.add("arrastrando");
+      });
+      el.addEventListener("pointermove", e => {
+        if (!arrastrando) return;
+        const dx = e.clientX - inicioX, dy = e.clientY - inicioY;
+        if (Math.hypot(dx, dy) > 6) movido = true;
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+      const soltar = () => {
+        if (!arrastrando) return;
+        arrastrando = false; el.classList.remove("arrastrando");
+        const a = el.getBoundingClientRect(), b = foca.getBoundingClientRect();
+        const choca = !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+        if (!movido) volar(el);
+        else if (choca) alimentar(el);
+        else { el.classList.add("volando"); el.style.transform = ""; }
+      };
+      el.addEventListener("pointerup", soltar);
+      el.addEventListener("pointercancel", soltar);
+      el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); volar(el); } });
+    });
+    function volar(el) {
+      const a = el.getBoundingClientRect(), b = foca.getBoundingClientRect();
+      const dx = (b.left + b.width / 2) - (a.left + a.width / 2), dy = (b.top + b.height * .65) - (a.top + a.height / 2);
+      el.classList.add("volando");
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(.6)`;
+      setTimeout(() => alimentar(el), 480);
+    }
+    function alimentar(el) {
+      if (comida) return;
+      comida = true;
+      el.classList.add("comida-ida");
+      foca.classList.add("ñam");
+      sfx.ñam();
+      setTimeout(() => desbloquear(2), 1000);
+    }
+  }
+
+  // --- Tarjeta 3: el botón escurridizo ---
+  function t3() {
+    const arena = $("#arena"), btn = $("#escurridizo");
+    // ✏️ PERSONALIZA: cuántas veces se escapa y qué dice en cada intento
+    const INTENTOS = 10;
+    const textos = [
+      "No me vas a atrapar", "Intenta no amarme", "Casi…", "Muy lenta",
+      "Por aquí no es", "Sigue intentando", "Ya merito", "Uy, se me escapó",
+      "Ya me estoy cansando", "Última oportunidad"
+    ];
+    let escapes = 0;
+    function escapar() {
+      const maxX = arena.clientWidth - btn.offsetWidth - 8, maxY = arena.clientHeight - btn.offsetHeight - 8;
+      btn.classList.add("movido");
+      btn.style.left = Math.max(8, azar(8, maxX)) + "px";
+      btn.style.top = Math.max(8, azar(8, maxY)) + "px";
+      btn.textContent = textos[escapes] || textos[textos.length - 1];
+      escapes++;
+      sfx.pop();
+      if (escapes >= INTENTOS) setTimeout(() => {
+        btn.textContent = "Ok, me rindo. ¡Ábreme!";
+        btn.classList.add("rendido");
+      }, 280);
+    }
+    btn.addEventListener("pointerenter", e => { if (e.pointerType === "mouse" && escapes < INTENTOS) escapar(); });
+    btn.addEventListener("pointerdown", e => { if (e.pointerType !== "mouse" && escapes < INTENTOS) { e.preventDefault(); escapar(); } });
+    btn.addEventListener("click", () => {
+      if (escapes < INTENTOS) { escapar(); return; }   // teclado o clics muy rápidos
+      if (btn.classList.contains("rendido")) desbloquear(3);
+    });
+  }
+
+  // --- Tarjeta 4: test infalible ---
+  function t4() {
+    $("#test-pregunta").textContent = testCompatibilidad.pregunta;
+    const cont = $("#test-opciones");
+    testCompatibilidad.opciones.forEach(op => {
+      const b = document.createElement("button");
+      b.textContent = op.texto;
+      b.addEventListener("click", () => {
+        cont.innerHTML = `<p class="test-cargando">Analizando con tecnología de punta…</p>`;
+        sfx.pop();
+        setTimeout(() => {
+          const res = document.createElement("span");
+          res.className = "test-resultado"; res.textContent = op.resultado;
+          $('[data-razon="3"]').before(res);
+          desbloquear(4);
+        }, 1100);
+      });
+      cont.appendChild(b);
+    });
+  }
+
+  function init() {
+    pintarRazones();
+    t1(); t2(); t3(); t4();
+    desbloqueadas.forEach(n => desbloquear(n, true));
+    if (desbloqueadas.size === 4) $("#final-tarjetas").classList.add("ver");
+  }
+  return { init };
+})();
+
+
+/* =================================================================
+   10. MINIJUEGO: PIZZERÍA DEL AMOR 3000
+   ✏️ Puedes cambiar ingredientes (emoji y nombre), la meta y las vidas.
+   ================================================================= */
+const Pizzeria = (() => {
+  const INGREDIENTES = {
+    corazon: { nombre: "Corazón" },
+    queso:   { nombre: "Queso" },
+    galleta: { nombre: "Galleta" },
+    fresa:   { nombre: "Fresa" }
+  };
+  const META = 5, VIDAS = 3;
+  const banda = $("#banda"), ticket = $("#ticket"), overlay = $("#pz-overlay"), msg = $("#pz-mensaje");
+  let st = null, ultimo = 0;
+
+  function pintarBotones() {
+    const cont = $("#ingredientes");
+    Object.entries(INGREDIENTES).forEach(([clave, ing], i) => {
+      const b = document.createElement("button");
+      b.className = "ing"; b.dataset.ing = clave;
+      b.innerHTML = `<span class="icono">${icono(clave)}</span>${ing.nombre}<kbd>tecla ${i + 1}</kbd>`;
+      b.addEventListener("click", () => agregar(clave));
+      cont.appendChild(b);
+    });
+    document.addEventListener("keydown", e => {
+      if (!st || !st.jugando) return;
+      const i = parseInt(e.key, 10) - 1, claves = Object.keys(INGREDIENTES);
+      if (i >= 0 && i < claves.length) agregar(claves[i]);
+    });
+  }
+  function pantalla(tipo) {
+    overlay.hidden = false;
+    if (tipo === "inicio") {
+      overlay.innerHTML = `
+        <div class="pz-icono">${icono("pizza")}</div>
+        <h3>¿Lista para tu turno en la cocina?</h3>
+        <p>Mira el pedido, toca los ingredientes justos y completa ${META} pizzas antes de que se vayan por la banda.</p>
+        <button class="boton rojo" id="pz-empezar">¡A cocinar!</button>`;
+    } else if (tipo === "derrota") {
+      overlay.innerHTML = `
+        <h3>¡Casi lo logras!</h3>
+        <p>Hasta las mejores pizzeras queman una que otra. Llevabas ${st.puntos} de ${META}. ¿Otra vuelta?</p>
+        <button class="boton rojo" id="pz-empezar">Intentar de nuevo</button>`;
+    } else if (tipo === "victoria") {
+      overlay.innerHTML = `
+        <div class="cupon" role="img" aria-label="Cupón de premio">
+          <h4>¡Nivel Maestra Pizzera superado!</h4>
+          <p class="cupon-premio">${CONFIG.premioPizza}</p>
+          <small>Válido para: <b>${CONFIG.nombreElla}</b> · Vence: nunca · Canjeable en persona</small>
+          <span class="sello">VIGENTE</span>
+        </div>
+        <p style="margin-top:14px">Haz captura de pantalla y preséntala para reclamar tu premio.</p>
+        <button class="boton secundario" id="pz-empezar">Jugar otra vez</button>`;
+    }
+    $("#pz-empezar").addEventListener("click", empezar);
+  }
+  function empezar() {
+    sfx.pop();
+    overlay.hidden = true;
+    $$(".pz-pizza", banda).forEach(p => p.remove());
+    st = { jugando: true, puntos: 0, vidas: VIDAS, pizza: null };
+    hud(); msg.textContent = "";
+    banda.classList.add("andando");
+    generarPizza();
+    ultimo = performance.now();
+    requestAnimationFrame(bucle);
+  }
+  function hud() {
+    $("#pz-score").textContent = st.puntos;
+    $("#pz-vidas").innerHTML = icono("corazon").repeat(st.vidas) + icono("corazonVacio").repeat(VIDAS - st.vidas);
+  }
+  function nuevoPedido() {
+    const claves = Object.keys(INGREDIENTES).sort(() => Math.random() - .5);
+    const cuantos = st.puntos < 2 ? 2 : (Math.random() < .5 ? 2 : 3);
+    const pedido = {};
+    claves.slice(0, cuantos).forEach(k => pedido[k] = 1 + Math.floor(Math.random() * 2));
+    return pedido;
+  }
+  function generarPizza() {
+    const el = document.createElement("div");
+    el.className = "pz-pizza";
+    el.innerHTML = `<div class="pz-cuerpo"></div>`;
+    banda.appendChild(el);
+    const tam = el.offsetWidth;
+    st.pizza = { el, cuerpo: $(".pz-cuerpo", el), x: -tam, tam, pedido: nuevoPedido(), puesto: {}, lista: false };
+    el.style.transform = `translate(${-tam}px,-50%)`;
+    pintarTicket();
+  }
+  function pintarTicket() {
+    const p = st.pizza;
+    ticket.innerHTML = Object.entries(p.pedido).map(([k, n]) => {
+      const lleva = p.puesto[k] || 0;
+      return `<span class="pz-item ${lleva >= n ? "ok" : ""}">${icono(k)}${lleva}/${n}</span>`;
+    }).join("<span>+</span>");
+  }
+  function agregar(clave) {
+    if (!st || !st.jugando || !st.pizza || st.pizza.lista) return;
+    const p = st.pizza;
+    p.puesto[clave] = (p.puesto[clave] || 0) + 1;
+    // dibujar el ingrediente en la pizza
+    const t = document.createElement("span");
+    t.className = "topping"; t.innerHTML = icono(clave);
+    const ang = azar(0, Math.PI * 2), rad = azar(0, 30);
+    t.style.left = 50 + Math.cos(ang) * rad + "%"; t.style.top = 50 + Math.sin(ang) * rad + "%";
+    p.cuerpo.appendChild(t);
+    sfx.pop();
+    // ¿se equivocó?
+    if (!p.pedido[clave] || p.puesto[clave] > p.pedido[clave]) { fallo("¡Ups! Eso no iba ahí, se quemó"); return; }
+    pintarTicket();
+    // ¿ya está completa?
+    if (Object.entries(p.pedido).every(([k, n]) => (p.puesto[k] || 0) === n)) exito();
+  }
+  function exito() {
+    const p = st.pizza; p.lista = true;
+    p.el.classList.add("ok");
+    st.puntos++; hud();
+    msg.textContent = elegir(["¡Perfecta!", "¡Qué rica se ve!", "¡Pizzera estrella!", "¡Así se hace!"]);
+    sfx.exito(); Monedas.sumar(1);
+    setTimeout(() => p.el.remove(), 650);
+    if (st.puntos >= META) { setTimeout(victoria, 700); return; }
+    setTimeout(() => st.jugando && generarPizza(), 750);
+  }
+  function fallo(texto) {
+    const p = st.pizza; p.lista = true;
+    p.el.classList.add("mal");
+    st.vidas--; hud();
+    msg.textContent = texto;
+    sfx.fallo();
+    setTimeout(() => p.el.remove(), 700);
+    if (st.vidas <= 0) { st.jugando = false; banda.classList.remove("andando"); setTimeout(() => pantalla("derrota"), 800); return; }
+    setTimeout(() => st.jugando && generarPizza(), 850);
+  }
+  function victoria() {
+    st.jugando = false;
+    banda.classList.remove("andando");
+    guardado.escribir("pizza_ganada", true);
+    Monedas.sumar(5);
+    pantalla("victoria");
+    confetiFiesta();
+  }
+  function bucle(ahora) {
+    if (!st || !st.jugando) return;
+    const dt = Math.min(0.05, (ahora - ultimo) / 1000); ultimo = ahora;
+    const p = st.pizza;
+    if (p && !p.lista) {
+      const recorrido = banda.clientWidth + p.tam;
+      const segundos = Math.max(4.6, 9.5 - st.puntos * 0.9);   // cada pizza va un poco más rápido
+      p.x += (recorrido / segundos) * dt;
+      p.el.style.transform = `translate(${p.x}px,-50%)`;
+      if (p.x > banda.clientWidth) fallo("¡Se escapó una pizza!");
+    }
+    requestAnimationFrame(bucle);
+  }
+  function init() { pintarBotones(); pantalla("inicio"); }
+  return { init };
+})();
+
+
+/* =================================================================
+   11. CABINA DE APAPACHOS
+   ================================================================= */
+function iniciarApapachos() {
+  const fs = $("#animos"), btn = $("#btn-dosis"), out = $("#dosis");
+  Object.entries(apapachos).forEach(([clave, a]) => {
+    const l = document.createElement("label");
+    l.className = "animo";
+    l.innerHTML = `<input type="radio" name="animo" value="${clave}"><span>${a.etiqueta}</span>`;
+    fs.appendChild(l);
+  });
+  fs.addEventListener("change", () => { btn.disabled = false; sfx.pop(); });
+  btn.addEventListener("click", () => {
+    const sel = $('input[name="animo"]:checked', fs); if (!sel) return;
+    const a = apapachos[sel.value];
+    out.innerHTML = `
+      <div class="abrazo" aria-hidden="true">
+        <figure class="personaje"><span class="sprite" data-sprite="foca" data-acc="bufanda"></span><figcaption>tú cielo</figcaption></figure>
+        <span class="abrazo-corazon icono">${icono("corazon")}</span>
+        <figure class="personaje"><span class="sprite" data-sprite="yopis"></span><figcaption>yopis</figcaption></figure>
+      </div>
+      <p class="dosis-msg">${elegir(a.mensajes)}</p>
+      <div class="receta"><b>℞ Receta:</b> ${a.receta}</div>`;
+    pintarSprites(out);
+    out.classList.remove("ver"); void out.offsetWidth; out.classList.add("ver");
+    sfx.campana();
+    Monedas.sumar(1);
+  });
+}
+
+
+/* =================================================================
+   12. ARRANQUE
+   ================================================================= */
+document.addEventListener("DOMContentLoaded", () => {
+  $$("[data-ella]").forEach(el => el.textContent = CONFIG.nombreElla);
+  $$("[data-yo]").forEach(el => el.textContent = CONFIG.nombreTuyo);
+  document.title = `Para ${CONFIG.nombreElla}, con cariño`;
+
+  pintarSprites();
+  pintarIconos();
+  Monedas.init();
+  iniciarNieve();
+  iniciarParticulasClic();
+  iniciarRadio();
+  iniciarGuardian();
+  iniciarBuzon();
+  Tarjetas.init();
+  Pizzeria.init();
+  iniciarApapachos();
+
+  $("#reiniciar").addEventListener("click", () => {
+    if (confirm("¿Reiniciar tarjetas, monedas y el buzón de hoy?")) { guardado.borrarTodo(); location.reload(); }
+  });
+});
+</script>
+</body>
+</html>
